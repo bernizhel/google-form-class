@@ -1,25 +1,38 @@
 class GoogleForm {
   constructor(options) {
-    this.html = `
-    <form action="" method="">
-      ${options.fields.reduce(
-        (acc, next) =>
-          acc +
-          `<label for="${
-            next.attributes.find((attr) => attr.name === 'id').value
-          }">${next.name}</label>
-          <${next.tag}${next.attributes.reduce(
-            (acc, next) => acc + ` ${next.name}="${next.value}"`,
-            ''
-          )} required="${next.isRequired ? 'required' : ''}" />`,
+    this.html = '';
+    this.html += '<form>';
+    this.html += '<fieldset>';
+    this.html += `<legend>${options.title}</legend>`;
+    this.html += `<label>${options.description}</label>`;
+    this.html += '<br />';
+    for (const field of options.fields) {
+      this.html += `<label for="${
+        field.attributes.find((attr) => attr.name === 'id')?.value ?? ''
+      }">${field.name}${field.isRequired ? '*' : ''}</label>`;
+      this.html += `<${field.tag}${field.attributes.reduce(
+        (acc, attr) => acc + ` ${attr.name}="${attr.value}"`,
         ''
-      )}
-    </form>
-    `;
+      )} ${field.isRequired ? 'required' : ''} />`;
+      this.html += '<br />';
+    }
+    this.html += '<button type="submit">Submit</button>';
+    this.html += '</fieldset>';
+    this.html += '</form>';
   }
 
   render(selector) {
     document.querySelector(selector).innerHTML += this.html;
+    document
+      .querySelector(`${selector} form:last-child`)
+      .addEventListener('submit', (e) => {
+        e.preventDefault();
+        for (const element of e.target.querySelectorAll('input')) {
+          console.log(
+            `${element.previousElementSibling.textContent}: ${element.value}`
+          );
+        }
+      });
   }
 }
 
@@ -36,18 +49,23 @@ function isAgeValid(age) {
 }
 
 const sampleForm = new GoogleForm({
-  title: 'Your age',
-  description: 'Please enter your age',
+  title: 'Your info',
+  description: 'Please enter your info',
   fields: [
     {
       name: 'Age',
       isRequired: true,
       validationFunctions: [isAgeValid],
       errorMessage: 'The age is invalid',
-      attributes: [
-        { name: 'id', value: 'ageInput' },
-        { name: 'type', value: 'number' },
-      ],
+      attributes: [{ name: 'id', value: 'ageInput' }],
+      tag: 'input',
+    },
+    {
+      name: 'Name',
+      isRequired: false,
+      validationFunctions: [],
+      errorMessage: 'The name is invalid',
+      attributes: [{ name: 'id', value: 'nameInput' }],
       tag: 'input',
     },
   ],
