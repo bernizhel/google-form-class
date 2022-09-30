@@ -1,10 +1,3 @@
-function addCssRule(cssRuleText) {
-  if (!document.head.querySelector('style')) {
-    document.head.appendChild(document.createElement('style'));
-  }
-  document.head.querySelector('style').textContent += cssRuleText;
-}
-
 class GoogleForm {
   #html = '';
   #options = {};
@@ -12,24 +5,23 @@ class GoogleForm {
   constructor(options) {
     // generate html code for the form instance
     this.#html += '<form>';
+    this.#html += `<h3>${options.title}</h3>`;
     this.#html += '<fieldset>';
-    this.#html += `<legend>${options.title}</legend>`;
-    this.#html += `<label>${options.description}</label>`;
+    this.#html += `<legend>${options.description}</legend>`;
     for (const fieldOptions of options.fields) {
       this.#html += '<div>';
       this.#html += `<label for="${fieldOptions.attributes.id ??
       ''}">${fieldOptions.name}</label>`;
-      if (fieldOptions.isRequired) {
-        this.#html += `<span class="inputRequired">*</span>`;
-      }
+      this.#html += `<span>${fieldOptions.isRequired ? '*' : ''}</span>`;
+      this.#html += '<br />';
       this.#html +=
         `<${fieldOptions.tag}${Object.entries(fieldOptions.attributes)
           .reduce(
             (acc, [attrKey, attrValue]) => acc + ` ${attrKey}="${attrValue}"`,
             '',
-          )} ${fieldOptions.isRequired ? 'required' : ''} />`;
-      this.#html +=
-        `<span class="inputError">${fieldOptions.errorMessage}</span>`;
+          )} />`;
+      this.#html += '<br />';
+      this.#html += `<span></span>`;
       this.#html += '</div>';
     }
     this.#html += '<button type="submit">Submit</button>';
@@ -41,53 +33,43 @@ class GoogleForm {
 
   render(selector) {
     document.querySelector(selector).innerHTML += this.#html;
-    addCssRule(`
-        ${selector} form input + span.inputError {
-          display: none;
-        }
-      `);
-    addCssRule(`
-        ${selector} form input:invalid + span.inputError[data-error] {
-          display: inline-block;
-        }
-      `);
-    for (const fieldElement of
-      document.querySelectorAll(`${selector} form:last-child input`)) {
+    const formElement = document.querySelector(`${selector} form:last-child`);
+    for (const fieldElement of formElement.querySelectorAll('input')) {
+      const fieldWrapperElement = fieldElement.parentElement;
       const fieldOptions = this.#options.fields.find(
-        ({name}) => fieldElement.parentElement.querySelector(
-            `label[for="${fieldElement.getAttribute('id')}"]`).textContent ===
+        ({name}) => fieldWrapperElement.querySelector(`label`).textContent ===
           name);
-      fieldElement.addEventListener('invalid', (e) => {
-        e.preventDefault();
-        const errorElement = fieldElement.parentElement.querySelector(
-          `#${fieldOptions.attributes.id} + span.inputError`);
-        if (!fieldOptions
+      fieldElement.addEventListener('invalid', (event) => {
+        event.preventDefault();
+        const errorElement = fieldWrapperElement.querySelector('input ~ span');
+        if ((
+          fieldOptions.isRequired || fieldElement.value !== ''
+        ) && !fieldOptions
           .validationFunctions
-          .reduce((acc, nextFunc) => acc * nextFunc(e.target.value), true)) {
-          errorElement.setAttribute('data-error', '');
-          console.log(fieldOptions.name + ': false');
+          .reduce(
+            (acc, nextFunc) => acc * nextFunc(fieldElement.value), true)) {
+          fieldElement.setCustomValidity(fieldOptions.errorMessage);
+          console.log(`${fieldOptions.name} is not valid`);
         } else {
-          errorElement.removeAttribute('data-error');
           fieldElement.setCustomValidity('');
-          fieldElement.reportValidity();
           setTimeout(() => {
-            fieldElement.parentElement.parentElement.querySelector(
-                'button[type="submit"]')
+            formElement.querySelector('button[type="submit"]')
               .click();
           }, 0);
-          console.log(fieldOptions.name + ': true');
+          console.log(`${fieldOptions.name} is okay`);
         }
+        errorElement.textContent = fieldElement.validationMessage;
       });
     }
-    document
-      .querySelector(`${selector} form:last-child`)
-      .addEventListener('submit', (e) => {
-        e.preventDefault();
-        for (const fieldElement of e.target.querySelectorAll('input')) {
+    formElement
+      .addEventListener('submit', (event) => {
+        event.preventDefault();
+        let willContinueSubmit = true;
+        for (const fieldElement of formElement.querySelectorAll('input')) {
+          const fieldWrapperElement = fieldElement.parentElement;
           const fieldOptions = this.#options.fields.find(
-            ({name}) => fieldElement.parentElement.querySelector(
-                `label[for="${fieldElement.getAttribute('id')}"]`).textContent ===
-              name);
+            ({name}) => fieldWrapperElement.querySelector(
+              `label`).textContent === name);
           if ((
             fieldOptions.isRequired || fieldElement.value !== ''
           ) && !fieldOptions
@@ -96,31 +78,26 @@ class GoogleForm {
               (acc, nextFunc) => acc * nextFunc(fieldElement.value), true)) {
             fieldElement.setCustomValidity(fieldOptions.errorMessage);
             if (!fieldElement.reportValidity()) {
-              return;
+              willContinueSubmit = false;
             }
-          } else {
-            fieldElement.setCustomValidity('');
           }
         }
-        alert('Are you sure you want to submit the form?');
-        for (const element of e.target.querySelectorAll('input')) {
-          console.log(`${element.parentElement.querySelector(
-            `label[for="${element.getAttribute(
-              'id')}"]`).textContent}: ${element.value}`);
+        if (willContinueSubmit) {
+          console.log('The form is submitted successfully!');
         }
       });
   }
 }
 
-// sampleForm
+// Here is a sample for the form creation
 
 function isAgeValid(age) {
   try {
     age = +age;
-  } catch (err) {
+  } catch (error) {
     return false;
   }
-  return Number.isInteger(age) && age > 0 && age < 150;
+  return Number.isInteger(age) && age > 0 && age < 120;
 }
 
 function isNameValid(name) {
@@ -145,7 +122,7 @@ const sampleForm = new GoogleForm({
     tag: 'input',
   }, {
     name: 'Age',
-    isRequired: true,
+    isRequired: false,
     validationFunctions: [isAgeValid],
     errorMessage: 'The age is invalid',
     attributes: {
@@ -163,7 +140,7 @@ const sampleForm = new GoogleForm({
     tag: 'input',
   }, {
     name: 'Email',
-    isRequired: false,
+    isRequired: true,
     validationFunctions: [isEmailValid],
     errorMessage: 'The email is invalid',
     attributes: {
@@ -173,4 +150,4 @@ const sampleForm = new GoogleForm({
   }],
 });
 
-sampleForm.render('div.google-form');
+sampleForm.render('.google-form');
