@@ -9,20 +9,19 @@ class GoogleForm {
     this.#html += '<fieldset>';
     this.#html += `<legend>${options.description}</legend>`;
     for (const fieldOptions of options.fields) {
-      this.#html += '<div>';
-      this.#html += `<label for="${fieldOptions.attributes.id ??
-      ''}">${fieldOptions.name}</label>`;
+      this.#html += `<label>${fieldOptions.name}`;
       this.#html += `<span>${fieldOptions.isRequired ? '*' : ''}</span>`;
       this.#html += '<br />';
-      this.#html +=
-        `<${fieldOptions.tag}${Object.entries(fieldOptions.attributes)
-          .reduce(
-            (acc, [attrKey, attrValue]) => acc + ` ${attrKey}="${attrValue}"`,
-            '',
-          )} />`;
+      this.#html += `<${fieldOptions.tag}`;
+      for (const [attributeKey, attributeValue] of
+        Object.entries(fieldOptions.attributes)) {
+        this.#html += ` ${attributeKey}="${attributeValue}"`;
+      }
+      this.#html += ' />';
       this.#html += '<br />';
       this.#html += `<span></span>`;
-      this.#html += '</div>';
+      this.#html += '</label>';
+      this.#html += '<br />';
     }
     this.#html += '<button type="submit">Submit</button>';
     this.#html += '</fieldset>';
@@ -32,16 +31,18 @@ class GoogleForm {
   }
 
   render(selector) {
-    document.querySelector(selector).innerHTML += this.#html;
-    const formElement = document.querySelector(`${selector} form:last-child`);
+    document.querySelector(selector)
+      .insertAdjacentHTML('beforeend', this.#html);
+    const formElement = document.querySelector(`${selector} form:last-of-type`);
     for (const fieldElement of formElement.querySelectorAll('input')) {
-      const fieldWrapperElement = fieldElement.parentElement;
+      const fieldLabelElement = fieldElement.parentElement;
       const fieldOptions = this.#options.fields.find(
-        ({name}) => fieldWrapperElement.querySelector(`label`).textContent ===
-          name);
+        ({name}) => fieldLabelElement.childNodes.item(0).textContent === name);
       fieldElement.addEventListener('invalid', (event) => {
+        event.stopImmediatePropagation();
         event.preventDefault();
-        const errorElement = fieldWrapperElement.querySelector('input ~ span');
+        const errorElement = fieldLabelElement.querySelector(
+          'span:last-of-type');
         if ((
           fieldOptions.isRequired || fieldElement.value !== ''
         ) && !fieldOptions
@@ -58,18 +59,26 @@ class GoogleForm {
           }, 0);
           console.log(`${fieldOptions.name} is okay`);
         }
-        errorElement.textContent = fieldElement.validationMessage;
+        errorElement.insertAdjacentText(
+          'afterbegin', fieldElement.validationMessage);
+      });
+      fieldElement.addEventListener('keypress', (event) => {
+        event.stopImmediatePropagation();
+        if (event.code === 'Enter') {
+          event.preventDefault();
+        }
       });
     }
     formElement
       .addEventListener('submit', (event) => {
+        event.stopImmediatePropagation();
         event.preventDefault();
         let willContinueSubmit = true;
         for (const fieldElement of formElement.querySelectorAll('input')) {
-          const fieldWrapperElement = fieldElement.parentElement;
+          const fieldLabelElement = fieldElement.parentElement;
           const fieldOptions = this.#options.fields.find(
-            ({name}) => fieldWrapperElement.querySelector(
-              `label`).textContent === name);
+            ({name}) => fieldLabelElement.childNodes.item(0).textContent ===
+              name);
           if ((
             fieldOptions.isRequired || fieldElement.value !== ''
           ) && !fieldOptions
@@ -88,66 +97,3 @@ class GoogleForm {
       });
   }
 }
-
-// Here is a sample for the form creation
-
-function isAgeValid(age) {
-  try {
-    age = +age;
-  } catch (error) {
-    return false;
-  }
-  return Number.isInteger(age) && age > 0 && age < 120;
-}
-
-function isNameValid(name) {
-  return !!name.match(/^[A-Z]\w{1,29}$/);
-}
-
-function isEmailValid(email) {
-  return !!email.match(/^.+@.+\..+$/);
-}
-
-const sampleForm = new GoogleForm({
-  title: 'Your info',
-  description: 'Please enter your info',
-  fields: [{
-    name: 'Name',
-    isRequired: true,
-    validationFunctions: [isNameValid],
-    errorMessage: 'The name is invalid',
-    attributes: {
-      id: 'nameInput',
-    },
-    tag: 'input',
-  }, {
-    name: 'Age',
-    isRequired: false,
-    validationFunctions: [isAgeValid],
-    errorMessage: 'The age is invalid',
-    attributes: {
-      id: 'ageInput',
-    },
-    tag: 'input',
-  }, {
-    name: 'Phone',
-    isRequired: false,
-    validationFunctions: [],
-    errorMessage: 'The phone is invalid',
-    attributes: {
-      id: 'phoneInput',
-    },
-    tag: 'input',
-  }, {
-    name: 'Email',
-    isRequired: true,
-    validationFunctions: [isEmailValid],
-    errorMessage: 'The email is invalid',
-    attributes: {
-      id: 'emailInput',
-    },
-    tag: 'input',
-  }],
-});
-
-sampleForm.render('.google-form');
