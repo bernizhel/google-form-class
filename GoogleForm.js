@@ -54,13 +54,11 @@ class GoogleForm {
         } else {
           fieldElement.setCustomValidity('');
           setTimeout(() => {
-            formElement.querySelector('button[type="submit"]')
-              .click();
+            formElement.requestSubmit();
           }, 0);
           console.log(`${fieldOptions.name} is okay`);
         }
-        errorElement.insertAdjacentText(
-          'afterbegin', fieldElement.validationMessage);
+        errorElement.textContent = fieldElement.validationMessage;
       });
       fieldElement.addEventListener('keypress', (event) => {
         event.stopImmediatePropagation();
