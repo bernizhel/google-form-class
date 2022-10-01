@@ -35,35 +35,12 @@ class GoogleForm {
       .insertAdjacentHTML('beforeend', this.#html);
     const formElement = document.querySelector(`${selector} form:last-of-type`);
     for (const fieldElement of formElement.querySelectorAll('input')) {
-      const fieldLabelElement = fieldElement.parentElement;
-      const fieldOptions = this.#options.fields.find(
-        ({name}) => fieldLabelElement.childNodes.item(0).textContent === name);
-      fieldElement.addEventListener('invalid', (event) => {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        const errorElement = fieldLabelElement.querySelector(
-          'span:last-of-type');
-        if ((
-          fieldOptions.isRequired || fieldElement.value !== ''
-        ) && !fieldOptions
-          .validationFunctions
-          .reduce(
-            (acc, nextFunc) => acc * nextFunc(fieldElement.value), true)) {
-          fieldElement.setCustomValidity(fieldOptions.errorMessage);
-          console.log(`${fieldOptions.name} is not valid`);
-        } else {
-          fieldElement.setCustomValidity('');
-          setTimeout(() => {
-            formElement.requestSubmit();
-          }, 0);
-          console.log(`${fieldOptions.name} is okay`);
-        }
-        errorElement.textContent = fieldElement.validationMessage;
-      });
       fieldElement.addEventListener('keypress', (event) => {
         event.stopImmediatePropagation();
         if (event.code === 'Enter') {
           event.preventDefault();
+          formElement.querySelector('button[type="submit"]')
+            .focus();
         }
       });
     }
@@ -77,20 +54,22 @@ class GoogleForm {
           const fieldOptions = this.#options.fields.find(
             ({name}) => fieldLabelElement.childNodes.item(0).textContent ===
               name);
+          const errorElement = fieldLabelElement.querySelector(
+            'span:last-of-type');
           if ((
             fieldOptions.isRequired || fieldElement.value !== ''
           ) && !fieldOptions
             .validationFunctions
             .reduce(
               (acc, nextFunc) => acc * nextFunc(fieldElement.value), true)) {
-            fieldElement.setCustomValidity(fieldOptions.errorMessage);
-            if (!fieldElement.reportValidity()) {
-              willContinueSubmit = false;
-            }
+            errorElement.textContent = fieldOptions.errorMessage;
+            willContinueSubmit = false;
+          } else {
+            errorElement.textContent = '';
           }
         }
         if (willContinueSubmit) {
-          console.log('The form is submitted successfully!');
+          alert('The form is submitted successfully!');
         }
       });
   }
