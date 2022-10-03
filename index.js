@@ -20,13 +20,11 @@ const sampleForm = new GoogleForm({
     isRequired: true,
     validationFunctions: [isEmailValid],
     errorMessage: 'The email is invalid',
-    // attributes: {},
     type: {keyword: 'input'},
   }, {
     name: 'What color do you like?',
     isRequired: true,
     validationFunctions: [],
-    // errorMessage: 'The color is invalid',
     attributes: {},
     type: {
       keyword: 'radio',
@@ -62,4 +60,9 @@ const sampleForm = new GoogleForm({
 });
 
 sampleForm.render('.google-form');
-sampleForm.render('.google-form');
+
+const googleFormContainer = document.querySelector('.google-form');
+googleFormContainer.querySelector('form')
+  .addEventListener('submit', (event) => {
+    console.table(event.data || {});
+  });
