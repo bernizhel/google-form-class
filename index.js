@@ -2,43 +2,62 @@ const sampleForm = new GoogleForm({
   title: 'Your info',
   description: 'Please enter your info',
   fields: [{
-    name: 'name',
+    name: 'Name',
     isRequired: true,
     validationFunctions: [isNameValid],
     errorMessage: 'The name is invalid',
     attributes: {},
     type: {keyword: 'input'},
   }, {
-    name: 'age',
+    name: 'Age',
     isRequired: false,
     validationFunctions: [isAgeValid],
     errorMessage: 'The age is invalid',
     attributes: {},
     type: {keyword: 'input'},
   }, {
-    name: 'email',
+    name: 'Email',
     isRequired: true,
     validationFunctions: [isEmailValid],
     errorMessage: 'The email is invalid',
     // attributes: {},
     type: {keyword: 'input'},
   }, {
-    name: 'what color do you like?',
+    name: 'What color do you like?',
     isRequired: true,
     validationFunctions: [],
     // errorMessage: 'The color is invalid',
     attributes: {},
     type: {
       keyword: 'radio',
-      values: ['red', 'green', 'blue'],
+      values: ['Red', 'Green', 'Blue'],
     },
   }, {
-    name: 'do you have a dog?',
+    name: 'Do you have a dog?',
     isRequired: true,
     type: {keyword: 'checkbox'},
   }, {
-    name: 'do you have a cat?',
+    name: 'Do you have a cat?',
     type: {keyword: 'checkbox'},
+  }, {
+    name: 'What country are you from?',
+    isRequired: true,
+    type: {
+      keyword: 'select',
+      values: ['Russia', 'USA', 'China', 'France', 'Uzbekistan'],
+    },
+  }, {
+    name: 'What city are you from?',
+    type: {
+      keyword: 'select',
+      values: {
+        'Russia': ['Moscow', 'Saint-Petersburg', 'Voronezh', 'Omsk'],
+        'USA': ['New York', 'Washington', 'Detroit', 'Miami'],
+        'China': ['Beijing', 'Hong-Kong', 'Shanghai'],
+        'France': ['Paris'],
+        'Uzbekistan': ['Tashkent'],
+      },
+    },
   }],
 });
 

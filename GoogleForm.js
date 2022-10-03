@@ -1,18 +1,9 @@
-function toTitleCase() {
-  return this.charAt(0)
-    .toUpperCase() + this.substring(1)
-    .toLowerCase();
-}
-
-
-String.prototype.toTitleCase = toTitleCase;
-
-
 class GoogleForm {
   #html = '';
   #options = {};
   #defaultRequiredError = 'Please, enter this field.';
   #defaultInvalidError = 'Please, input correct data.';
+  #defaultSelectOption = 'Not selected';
 
   constructor(options) {
     // check the options argument for fields to exist
@@ -22,10 +13,9 @@ class GoogleForm {
     ) || (
       options?.type?.keyword === 'radio' && !options?.type?.values
     )) {
-      throw new TypeError('The options object must contain the "title" and' +
-        ' "fields" keys, and its "fields" key must be an array of object' +
-        ' with keys "name" and "type", and radio input type must have' +
-        ' "values" array in its "type" object');
+      throw new TypeError('The options argument passed by creating a new' +
+        ' GoogleForm instance must be of the corresponding type, please,' +
+        ' read the documentation on this class.');
     }
     // generate html code for the form instance
     this.#html += '<form>';
@@ -37,7 +27,7 @@ class GoogleForm {
     for (const fieldOptions of options.fields) {
       if (fieldOptions.type.keyword === 'radio') {
         this.#html += '<div>';
-        this.#html += `<span>${fieldOptions.name.toTitleCase()}`;
+        this.#html += `<span>${fieldOptions.name}`;
         this.#html += `<span>${fieldOptions?.isRequired ? '*' : ''}</span>`;
         this.#html += '</span>';
         this.#html += '<br />';
@@ -50,7 +40,7 @@ class GoogleForm {
             this.#html += ` ${attributeKey}="${attributeValue}"`;
           }
           this.#html += ` name="${fieldOptions.name}" value="${value}" />`;
-          this.#html += `${value.toTitleCase()}</label>`;
+          this.#html += `${value}</label>`;
           this.#html += '<br />';
         }
         this.#html += '</div>';
@@ -65,14 +55,44 @@ class GoogleForm {
           this.#html += ` ${attributeKey}="${attributeValue}"`;
         }
         this.#html += ' />';
-        this.#html += fieldOptions.name.toTitleCase();
+        this.#html += fieldOptions.name;
+        this.#html += '<br />';
+        this.#html += `<span></span>`;
+        this.#html += '<br />';
+        this.#html += '</label>';
+      } else if (fieldOptions.type.keyword === 'select') {
+        this.#html += `<label>${fieldOptions.name}`;
         this.#html += `<span>${fieldOptions?.isRequired ? '*' : ''}</span>`;
+        this.#html += '<br />';
+        this.#html += `<select`;
+        for (const [attributeKey, attributeValue] of
+          Object.entries(fieldOptions.attributes || [])) {
+          this.#html += ` ${attributeKey}="${attributeValue}"`;
+        }
+        this.#html += ' />';
+        this.#html += `<option value="" selected ${fieldOptions.isRequired ?
+          'disabled hidden' : ''}>${this.#defaultSelectOption}</option>`;
+        if (Array.isArray(fieldOptions.type.values)) {
+          for (const value of fieldOptions.type.values) {
+            this.#html += `<option value="${value}">${value}</option>`;
+          }
+        } else {
+          for (const [valuesGroup, values] of
+            Object.entries(fieldOptions.type.values)) {
+            this.#html += `<optgroup label="${valuesGroup}">`;
+            for (const value of values) {
+              this.#html += `<option value="${value}">${value}</option>`;
+            }
+            this.#html += '</optgroup>';
+          }
+        }
+        this.#html += '</select>';
         this.#html += '<br />';
         this.#html += `<span></span>`;
         this.#html += '<br />';
         this.#html += '</label>';
       } else {
-        this.#html += `<label>${fieldOptions.name.toTitleCase()}`;
+        this.#html += `<label>${fieldOptions.name}`;
         this.#html += `<span>${fieldOptions?.isRequired ? '*' : ''}</span>`;
         this.#html += '<br />';
         this.#html += `<input`;
@@ -123,7 +143,7 @@ class GoogleForm {
           const fieldLabelElement = fieldElement.parentElement;
           const fieldOptions = this.#options.fields.find(
             ({name}) => fieldLabelElement.childNodes.item(0).textContent ===
-              name.toTitleCase());
+              name);
           const errorElement = fieldLabelElement.querySelector(
             'span:last-of-type');
           if ((
@@ -145,7 +165,7 @@ class GoogleForm {
             'span:first-of-type');
           const radioOptions = this.#options.fields.find(
             ({name}) => radioTitleElement.childNodes.item(0).textContent ===
-              name.toTitleCase());
+              name);
           const radioErrorElement = radioWrapperElement.querySelector(
             'div + span');
           if (radioOptions?.isRequired && !Array.prototype.reduce.call(
@@ -157,6 +177,21 @@ class GoogleForm {
             willContinueSubmit = false;
           } else {
             radioErrorElement.textContent = '';
+          }
+        }
+        for (const selectElement of formElement.querySelectorAll('select')) {
+          const selectLabelElement = selectElement.parentElement;
+          const selectOptions = this.#options.fields.find(
+            ({name}) => selectLabelElement.childNodes.item(0).textContent ===
+              name);
+          const selectErrorElement = selectLabelElement.querySelector(
+            'span:last-of-type');
+          if (selectOptions?.isRequired && selectElement.value === '') {
+            selectErrorElement.textContent =
+              selectOptions?.errorMessage || this.#defaultRequiredError;
+            willContinueSubmit = false;
+          } else {
+            selectErrorElement.textContent = '';
           }
         }
         if (!willContinueSubmit) {

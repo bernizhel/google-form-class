@@ -8,7 +8,7 @@ function isAgeValid(age) {
 }
 
 function isNameValid(name) {
-  return !!name.match(/^[A-Z][a-z]{1,19}$/g);
+  return !!name.match(/^(([A-Z][a-z]{1,29})(\s|))+$/g);
 }
 
 function isEmailValid(email) {
