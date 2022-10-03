@@ -23,7 +23,7 @@ const sampleForm = new GoogleForm({
     // attributes: {},
     type: {keyword: 'input'},
   }, {
-    name: 'color',
+    name: 'what color do you like?',
     isRequired: true,
     validationFunctions: [],
     // errorMessage: 'The color is invalid',
@@ -32,6 +32,13 @@ const sampleForm = new GoogleForm({
       keyword: 'radio',
       values: ['red', 'green', 'blue'],
     },
+  }, {
+    name: 'do you have a dog?',
+    isRequired: true,
+    type: {keyword: 'checkbox'},
+  }, {
+    name: 'do you have a cat?',
+    type: {keyword: 'checkbox'},
   }],
 });
 
