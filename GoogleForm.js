@@ -68,13 +68,13 @@ class GoogleForm {
 
   #createRadioField(fieldOptions) {
     const wrapperElement = this.#createElement('div');
-    const nameElement = this.#createElement('span', {
-      innerText: fieldOptions.name,
+    const titleElement = this.#createElement('span', {
+      innerText: fieldOptions.title,
     });
-    nameElement.appendChild(this.#createElement('span', {
+    titleElement.appendChild(this.#createElement('span', {
       innerText: fieldOptions.isRequired ? '*' : '',
     }));
-    wrapperElement.appendChild(nameElement);
+    wrapperElement.appendChild(titleElement);
     wrapperElement.appendChild(this.#createElement('br'));
     const innerWrapperElement = this.#createElement('div');
     const errorElement = this.#createElement('span');
@@ -116,7 +116,7 @@ class GoogleForm {
     });
     this.#addKeypressHandler(checkboxElement, fieldOptions);
     labelElement.appendChild(checkboxElement);
-    labelElement.appendChild(document.createTextNode(fieldOptions.name));
+    labelElement.appendChild(document.createTextNode(fieldOptions.title));
     labelElement.appendChild(this.#createElement('span', {
       innerText: fieldOptions.isRequired ? '*' : '',
     }));
@@ -134,7 +134,7 @@ class GoogleForm {
 
   #createInputField(fieldOptions) {
     const labelElement = this.#createElement(
-      'label', {innerText: fieldOptions.name});
+      'label', {innerText: fieldOptions.title});
     labelElement.appendChild(this.#createElement('span', {
       innerText: fieldOptions.isRequired ? '*' : '',
     }));
@@ -157,7 +157,7 @@ class GoogleForm {
 
   #createSelectField(fieldOptions) {
     const labelElement = this.#createElement(
-      'label', {innerText: fieldOptions.name});
+      'label', {innerText: fieldOptions.title});
     labelElement.appendChild(this.#createElement('span', {
       innerText: fieldOptions.isRequired ? '*' : '',
     }));

@@ -2,27 +2,30 @@ const sampleForm = new GoogleForm({
   title: 'Your info',
   description: 'Please enter your info',
   fields: [{
-    name: 'Name',
+    title: 'Name',
+    name: 'name',
     isRequired: true,
     validationFunctions: [isNameValid],
     errorMessage: 'The name is invalid',
     attributes: {},
     type: {keyword: 'input'},
   }, {
-    name: 'Age',
+    title: 'Age',
+    name: 'age',
     isRequired: false,
     validationFunctions: [isAgeValid],
     errorMessage: 'The age is invalid',
     attributes: {},
     type: {keyword: 'input'},
   }, {
-    name: 'Email',
-    isRequired: true,
-    validationFunctions: [isEmailValid],
+    title: 'Email',
+    name: 'email',
     errorMessage: 'The email is invalid',
+    attributes: {type: 'email'},
     type: {keyword: 'input'},
   }, {
-    name: 'What color do you like?',
+    title: 'What color do you like?',
+    name: 'color',
     isRequired: true,
     validationFunctions: [],
     attributes: {},
@@ -31,21 +34,25 @@ const sampleForm = new GoogleForm({
       values: ['Red', 'Green', 'Blue'],
     },
   }, {
-    name: 'Do you have a dog?',
+    title: 'Do you have a dog?',
+    name: 'hasDog',
     isRequired: true,
     type: {keyword: 'checkbox'},
   }, {
-    name: 'Do you have a cat?',
+    title: 'Do you have a cat?',
+    name: 'hasCat',
     type: {keyword: 'checkbox'},
   }, {
-    name: 'What country are you from?',
+    title: 'What country are you from?',
+    name: 'country',
     isRequired: true,
     type: {
       keyword: 'select',
       values: ['Russia', 'USA', 'China', 'France', 'Uzbekistan'],
     },
   }, {
-    name: 'What city are you from?',
+    title: 'What city are you from?',
+    name: 'city',
     type: {
       keyword: 'select',
       values: {
