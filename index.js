@@ -61,8 +61,10 @@ const sampleForm = new GoogleForm({
 
 sampleForm.render('.google-form');
 
-const googleFormContainer = document.querySelector('.google-form');
-googleFormContainer.querySelector('form')
+document.querySelector('.google-form form')
   .addEventListener('submit', (event) => {
-    console.table(event.data || {});
+    if (!event.data) {
+      return;
+    }
+    console.table(event.data);
   });
