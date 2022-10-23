@@ -15,13 +15,29 @@ const sampleForm = new GoogleForm({
     isRequired: false,
     validationFunctions: [isAgeValid],
     errorMessage: 'The age is invalid',
-    attributes: {},
+    attributes: {type: 'number'},
     type: {keyword: 'input'},
   }, {
     title: 'Email',
     name: 'email',
+    validationFunctions: [isEmailValid],
     errorMessage: 'The email is invalid',
     attributes: {type: 'email'},
+    type: {keyword: 'input'},
+  }, {
+    title: 'Password',
+    name: 'password',
+    attributes: {type: 'password'},
+    type: {keyword: 'input'},
+  }, {
+    title: 'Phone',
+    name: 'phone',
+    attributes: {type: 'tel'},
+    type: {keyword: 'input'},
+  }, {
+    title: 'URL',
+    name: 'url',
+    attributes: {type: 'url'},
     type: {keyword: 'input'},
   }, {
     title: 'What color do you like?',

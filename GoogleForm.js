@@ -42,7 +42,7 @@ class GoogleForm {
     }
     fieldsetElement.appendChild(this.#createElement('br'));
     fieldsetElement.appendChild(this.#submitButtonElement);
-    const formElement = this.#createElement('form');
+    const formElement = this.#createElement('form', {noValidate: true});
     formElement.appendChild(fieldsetElement);
     this.#addSubmitHandler(formElement);
     this.#formElement = formElement;
@@ -78,11 +78,7 @@ class GoogleForm {
     wrapperElement.appendChild(this.#createElement('br'));
     const innerWrapperElement = this.#createElement('div');
     const errorElement = this.#createElement('span');
-    this.#radioElements.push([
-      fieldOptions,
-      [],
-      errorElement,
-    ]);
+    this.#radioElements.push([fieldOptions, [], errorElement]);
     for (const value of fieldOptions.type.values) {
       const labelElement = this.#createElement('label');
       const radioElement = this.#createElement('input', {
@@ -121,11 +117,7 @@ class GoogleForm {
       innerText: fieldOptions.isRequired ? '*' : '',
     }));
     const errorElement = this.#createElement('span');
-    this.#checkboxElements.push([
-      fieldOptions,
-      checkboxElement,
-      errorElement,
-    ]);
+    this.#checkboxElements.push([fieldOptions, checkboxElement, errorElement]);
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(errorElement);
     labelElement.appendChild(this.#createElement('br'));
@@ -144,11 +136,7 @@ class GoogleForm {
     this.#addKeypressHandler(inputElement, fieldOptions);
     labelElement.appendChild(inputElement);
     const errorElement = this.#createElement('span');
-    this.#inputElements.push([
-      fieldOptions,
-      inputElement,
-      errorElement,
-    ]);
+    this.#inputElements.push([fieldOptions, inputElement, errorElement]);
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(errorElement);
     labelElement.appendChild(this.#createElement('br'));
@@ -195,11 +183,7 @@ class GoogleForm {
     }
     labelElement.appendChild(selectElement);
     const errorElement = this.#createElement('span');
-    this.#selectElements.push([
-      fieldOptions,
-      selectElement,
-      errorElement,
-    ]);
+    this.#selectElements.push([fieldOptions, selectElement, errorElement]);
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(errorElement);
     labelElement.appendChild(this.#createElement('br'));
@@ -220,6 +204,17 @@ class GoogleForm {
     });
   }
 
+  #checkInputValidity(inputElement, fieldOptions) {
+    if (inputElement.value === '') {
+      return !fieldOptions.isRequired;
+    }
+    if (!fieldOptions.validationFunctions) {
+      return !inputElement.validity.typeMismatch;
+    }
+    return fieldOptions.validationFunctions.reduce(
+      (acc, nextFunc) => acc * nextFunc(inputElement.value), true);
+  }
+
   #addSubmitHandler(formElement) {
     formElement
       .addEventListener('submit', (event) => {
@@ -229,14 +224,7 @@ class GoogleForm {
         let willContinueSubmit = true;
         for (const [fieldOptions, inputElement, errorElement] of
           this.#inputElements) {
-          if ((
-            fieldOptions?.isRequired && inputElement.value === ''
-          ) || (
-            fieldOptions?.isRequired || inputElement.value !== ''
-          ) && !fieldOptions
-            ?.validationFunctions
-            ?.reduce(
-              (acc, nextFunc) => acc * nextFunc(inputElement.value), true)) {
+          if (!this.#checkInputValidity(inputElement, fieldOptions)) {
             errorElement.textContent =
               fieldOptions?.errorMessage ?? this.#defaultInvalidError;
             willContinueSubmit = false;
