@@ -83,11 +83,13 @@ const sampleForm = new GoogleForm({
 });
 
 sampleForm.render('.google-form');
+sampleForm.render('.google-form');
 
-document.querySelector('.google-form form')
-  .addEventListener('submit', (event) => {
-    if (!event.data) {
-      return;
-    }
-    console.table(event.data);
-  });
+document.querySelectorAll('.google-form form')
+  .forEach(form => form
+    .addEventListener('submit', (event) => {
+      if (!event.data) {
+        return;
+      }
+      console.table(event.data);
+    }));

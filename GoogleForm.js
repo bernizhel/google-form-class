@@ -1,4 +1,6 @@
 class GoogleForm {
+  #instance = {};
+  #options = {};
   #formElement = this.#createElement('form', {noValidate: true});
   #submitButtonElement = this.#createElement('button', {
     type: 'submit',
@@ -18,6 +20,7 @@ class GoogleForm {
         ' GoogleForm instance must be of the corresponding type, please,' +
         ' read the documentation on this class.');
     }
+    this.#options = options;
     this.#initializeForm(options);
   }
 
@@ -285,7 +288,8 @@ class GoogleForm {
   }
 
   render(selector) {
+    this.#instance = new GoogleForm(this.#options);
     document.querySelector(selector)
-      .appendChild(this.#formElement);
+      .appendChild(this.#instance.#formElement);
   }
 }
