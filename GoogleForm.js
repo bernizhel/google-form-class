@@ -1,17 +1,39 @@
 class GoogleForm {
-  #formElement = {};
-  #submitButtonElement = {};
+  #formElement = this.#createElement('form', {noValidate: true});
+  #submitButtonElement = this.#createElement('button', {
+    type: 'submit',
+    innerText: 'Submit',
+  });
   #inputElements = [];
-  #checkboxElements = [];
   #radioElements = [];
+  #checkboxElements = [];
   #selectElements = [];
-  #defaultRequiredError = 'Please, enter this field.';
   #defaultInvalidError = 'Please, input correct data.';
+  #defaultRequiredError = 'Please, enter this field.';
   #defaultSelectOption = 'Not selected';
 
   constructor(options) {
-    this.#checkOptions(options);
+    if (!this.#checkOptions(options)) {
+      throw new TypeError('The options argument passed by creating a new' +
+        ' GoogleForm instance must be of the corresponding type, please,' +
+        ' read the documentation on this class.');
+    }
     this.#initializeForm(options);
+  }
+
+  #checkOptions(options) {
+    if (!options?.title) {
+      return false;
+    }
+    for (const field of options?.fields ?? []) {
+      if (!field?.name || !field?.type?.keyword) {
+        return false;
+      }
+    }
+    return !(
+      ['radio', 'select'].includes(options?.type?.keyword) &&
+      !options?.type?.values
+    );
   }
 
   #initializeForm(options) {
@@ -22,10 +44,6 @@ class GoogleForm {
       fieldsetElement.appendChild(
         this.#createElement('p', {innerText: options.description}));
     }
-    this.#submitButtonElement = this.#createElement('button', {
-      type: 'submit',
-      innerText: 'Submit',
-    });
     for (const fieldOptions of options.fields) {
       if (fieldOptions.type.keyword === 'radio') {
         fieldsetElement.appendChild(this.#createRadioField(fieldOptions));
@@ -42,28 +60,31 @@ class GoogleForm {
     }
     fieldsetElement.appendChild(this.#createElement('br'));
     fieldsetElement.appendChild(this.#submitButtonElement);
-    const formElement = this.#createElement('form', {noValidate: true});
-    formElement.appendChild(fieldsetElement);
-    this.#addSubmitHandler(formElement);
-    this.#formElement = formElement;
+    this.#formElement.appendChild(fieldsetElement);
+    this.#addSubmitHandler(this.#formElement);
   }
-
-  #checkOptions(options) {
-    if (!options?.title || !options?.fields?.reduce(
-      (acc, nextField) => acc * !!nextField?.name * !!nextField?.type?.keyword,
-      true,
-    ) || (
-      options?.type?.keyword === 'radio' && !options?.type?.values
-    )) {
-      throw new TypeError('The options argument passed by creating a new' +
-        ' GoogleForm instance must be of the corresponding type, please,' +
-        ' read the documentation on this class.');
-    }
-  }
-
 
   #createElement(tagName, options) {
     return Object.assign(document.createElement(tagName), options);
+  }
+
+  #createInputField(fieldOptions) {
+    const labelElement = this.#createElement(
+      'label', {innerText: fieldOptions.title});
+    labelElement.appendChild(this.#createElement('span', {
+      innerText: fieldOptions.isRequired ? '*' : '',
+    }));
+    labelElement.appendChild(this.#createElement('br'));
+    const inputElement = this.#createElement(
+      'input', fieldOptions.attributes || {});
+    this.#addKeypressHandler(inputElement, fieldOptions);
+    labelElement.appendChild(inputElement);
+    const errorElement = this.#createElement('span');
+    this.#inputElements.push([fieldOptions, inputElement, errorElement]);
+    labelElement.appendChild(this.#createElement('br'));
+    labelElement.appendChild(errorElement);
+    labelElement.appendChild(this.#createElement('br'));
+    return labelElement;
   }
 
   #createRadioField(fieldOptions) {
@@ -90,8 +111,8 @@ class GoogleForm {
         value,
       });
       this.#addKeypressHandler(radioElement, fieldOptions);
-      labelElement.appendChild(radioElement);
       this.#radioElements[this.#radioElements.length - 1][1].push(radioElement);
+      labelElement.appendChild(radioElement);
       labelElement.appendChild(document.createTextNode(value));
       innerWrapperElement.appendChild(labelElement);
       innerWrapperElement.appendChild(this.#createElement('br'));
@@ -117,26 +138,7 @@ class GoogleForm {
       innerText: fieldOptions.isRequired ? '*' : '',
     }));
     const errorElement = this.#createElement('span');
-    this.#checkboxElements.push([fieldOptions, checkboxElement, errorElement]);
-    labelElement.appendChild(this.#createElement('br'));
-    labelElement.appendChild(errorElement);
-    labelElement.appendChild(this.#createElement('br'));
-    return labelElement;
-  }
-
-  #createInputField(fieldOptions) {
-    const labelElement = this.#createElement(
-      'label', {innerText: fieldOptions.title});
-    labelElement.appendChild(this.#createElement('span', {
-      innerText: fieldOptions.isRequired ? '*' : '',
-    }));
-    labelElement.appendChild(this.#createElement('br'));
-    const inputElement = this.#createElement(
-      'input', fieldOptions.attributes || {});
-    this.#addKeypressHandler(inputElement, fieldOptions);
-    labelElement.appendChild(inputElement);
-    const errorElement = this.#createElement('span');
-    this.#inputElements.push([fieldOptions, inputElement, errorElement]);
+    this.#checkboxElements.push([fieldOptions, checkboxElement]);
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(errorElement);
     labelElement.appendChild(this.#createElement('br'));
@@ -211,8 +213,12 @@ class GoogleForm {
     if (!fieldOptions.validationFunctions) {
       return !inputElement.validity.typeMismatch;
     }
-    return fieldOptions.validationFunctions.reduce(
-      (acc, nextFunc) => acc * nextFunc(inputElement.value), true);
+    for (const validationFunction of fieldOptions.validationFunctions) {
+      if (!validationFunction(inputElement.value)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   #addSubmitHandler(formElement) {
@@ -233,16 +239,12 @@ class GoogleForm {
             submitData[fieldOptions.name] = inputElement.value;
           }
         }
-
         for (const [fieldOptions, radioElements, errorElement] of
           this.#radioElements) {
           if (fieldOptions?.isRequired &&
-            !radioElements.reduce(
-              (acc, nextRadio) => acc + nextRadio.checked,
-              false,
-            )) {
+            !radioElements.find(radio => radio.checked)) {
             errorElement.textContent =
-              fieldOptions?.errorMessage || this.#defaultRequiredError;
+              fieldOptions?.errorMessage ?? this.#defaultRequiredError;
             willContinueSubmit = false;
           } else {
             errorElement.textContent = '';
@@ -250,16 +252,14 @@ class GoogleForm {
               radioElements.find((radioElement) => radioElement.checked).value;
           }
         }
-
         for (const [fieldOptions, checkboxElement] of this.#checkboxElements) {
           submitData[fieldOptions.name] = checkboxElement.checked;
         }
-
         for (const [fieldOptions, selectElement, errorElement] of
           this.#selectElements) {
           if (fieldOptions?.isRequired && selectElement.value === '') {
             errorElement.textContent =
-              fieldOptions?.errorMessage || this.#defaultRequiredError;
+              fieldOptions?.errorMessage ?? this.#defaultRequiredError;
             willContinueSubmit = false;
           } else {
             errorElement.textContent = '';
