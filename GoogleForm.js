@@ -228,11 +228,15 @@ class GoogleForm {
         event.preventDefault();
         const submitData = {};
         let willContinueSubmit = true;
+        let elementToFocus = null;
         for (const [fieldOptions, inputElement, errorElement] of
           this.#inputElements) {
           if (!this.#checkInputValidity(inputElement, fieldOptions)) {
             errorElement.textContent =
               fieldOptions?.errorMessage ?? this.#defaultInvalidError;
+            if (!elementToFocus) {
+              elementToFocus = inputElement;
+            }
             willContinueSubmit = false;
           } else {
             errorElement.textContent = '';
@@ -245,6 +249,9 @@ class GoogleForm {
             !radioElements.find(radio => radio.checked)) {
             errorElement.textContent =
               fieldOptions?.errorMessage ?? this.#defaultRequiredError;
+            if (!elementToFocus) {
+              elementToFocus = radioElements[0];
+            }
             willContinueSubmit = false;
           } else {
             errorElement.textContent = '';
@@ -260,6 +267,9 @@ class GoogleForm {
           if (fieldOptions?.isRequired && selectElement.value === '') {
             errorElement.textContent =
               fieldOptions?.errorMessage ?? this.#defaultRequiredError;
+            if (!elementToFocus) {
+              elementToFocus = selectElement;
+            }
             willContinueSubmit = false;
           } else {
             errorElement.textContent = '';
@@ -267,6 +277,7 @@ class GoogleForm {
           }
         }
         if (!willContinueSubmit) {
+          elementToFocus.focus();
           return;
         }
         event.data = submitData;
