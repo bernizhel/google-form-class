@@ -79,7 +79,7 @@ class GoogleForm {
     }));
     labelElement.appendChild(this.#createElement('br'));
     const inputElement = this.#createElement(
-      'input', fieldOptions.attributes || {});
+      'input', fieldOptions.attributes ?? {});
     this.#addKeypressHandler(inputElement, fieldOptions);
     labelElement.appendChild(inputElement);
     const errorElement = this.#createElement('span');
@@ -107,7 +107,7 @@ class GoogleForm {
       const labelElement = this.#createElement('label');
       const radioElement = this.#createElement('input', {
         ...(
-          fieldOptions.attributes || {}
+          fieldOptions.attributes ?? {}
         ),
         type: 'radio',
         name: fieldOptions.name,
@@ -130,7 +130,7 @@ class GoogleForm {
     const labelElement = this.#createElement('label');
     const checkboxElement = this.#createElement('input', {
       ...(
-        fieldOptions.attributes || {}
+        fieldOptions.attributes ?? {}
       ),
       type: 'checkbox',
     });
@@ -156,7 +156,7 @@ class GoogleForm {
     }));
     labelElement.appendChild(this.#createElement('br'));
     const selectElement = this.#createElement(
-      'select', fieldOptions.attributes || {});
+      'select', fieldOptions.attributes ?? {});
     selectElement.appendChild(this.#createElement('option', {
       value: '',
       selected: true,
@@ -165,7 +165,7 @@ class GoogleForm {
       innerText: this.#defaultSelectOption,
     }));
     if (Array.isArray(fieldOptions.type.values)) {
-      for (const value of fieldOptions.type.values || []) {
+      for (const value of fieldOptions.type.values) {
         selectElement.appendChild(this.#createElement('option', {
           value,
           innerText: value,
@@ -173,7 +173,7 @@ class GoogleForm {
       }
     } else {
       for (const [valuesGroup, values] of
-      Object.entries(fieldOptions.type.values) || []) {
+        Object.entries(fieldOptions.type.values)) {
         const optgroupElement = this.#createElement('optgroup', {
           label: valuesGroup,
         });
