@@ -1,5 +1,4 @@
 class GoogleForm {
-  #instance = {};
   #options = {};
   #formElement = this.#createElement('form', {noValidate: true});
   #submitButtonElement = this.#createElement('button', {
@@ -288,8 +287,7 @@ class GoogleForm {
   }
 
   render(selector) {
-    this.#instance = new GoogleForm(this.#options);
     document.querySelector(selector)
-      .appendChild(this.#instance.#formElement);
+      .appendChild(new GoogleForm(this.#options));
   }
 }
