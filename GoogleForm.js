@@ -26,25 +26,47 @@ class GoogleForm {
         `The options argument is not valid. Read the documentation on this class.`
       );
     }
-    this.#options = options;
+    this.#setOptions(options);
     this.#initializeForm(options);
   }
 
   #checkOptions(options) {
-    if (!options?.title) {
+    if (!options?.title || !(options?.fields && Array.isArray(options.fields))) {
       return false;
     }
 
-    for (const field of options?.fields ?? []) {
-      if (!field?.name || !field?.type?.keyword) {
+    for (const field of options.fields) {
+      if (!field?.title || !field?.name || !field?.type?.keyword) {
+        return false;
+      }
+
+      if (
+        [this.#radioKeyword, this.#selectKeyword].includes(field.type.keyword) &&
+        !field?.type?.values
+      ) {
         return false;
       }
     }
 
-    return !(
-      [this.#radioKeyword, this.#selectKeyword].includes(options?.type?.keyword) &&
-      !options?.type?.values
-    );
+    return true;
+  }
+
+  #setOptions(options) {
+    options.description = options?.description ?? {};
+
+    for (let i = 0; i < options.fields.length; i++) {
+      options.fields[i].isRequired ??= false;
+      options.fields[i].validationFunctions ??= [];
+
+      options.fields[i].errorMessage ??=
+        options.fields[i].type.keyword === this.#inputKeyword
+          ? this.#defaultInvalidError
+          : this.#defaultRequiredError;
+
+      options.fields[i].attributes ??= {};
+    }
+
+    this.#options = options;
   }
 
   #initializeForm(options) {
@@ -95,7 +117,7 @@ class GoogleForm {
     );
     labelElement.appendChild(this.#createElement('br'));
 
-    const inputElement = this.#createElement('input', fieldOptions.attributes ?? {});
+    const inputElement = this.#createElement('input', fieldOptions.attributes);
     this.#addKeypressHandler(inputElement, fieldOptions);
     labelElement.appendChild(inputElement);
 
@@ -126,7 +148,7 @@ class GoogleForm {
     for (const value of fieldOptions.type.values) {
       const labelElement = this.#createElement('label');
       const radioElement = this.#createElement('input', {
-        ...(fieldOptions.attributes ?? {}),
+        ...fieldOptions.attributes,
         type: 'radio',
         name: fieldOptions.name,
         value,
@@ -149,7 +171,7 @@ class GoogleForm {
     const labelElement = this.#createElement('label');
 
     const checkboxElement = this.#createElement('input', {
-      ...(fieldOptions.attributes ?? {}),
+      ...fieldOptions.attributes,
       type: 'checkbox',
     });
     this.#addKeypressHandler(checkboxElement, fieldOptions);
@@ -181,7 +203,7 @@ class GoogleForm {
     );
     labelElement.appendChild(this.#createElement('br'));
 
-    const selectElement = this.#createElement('select', fieldOptions.attributes ?? {});
+    const selectElement = this.#createElement('select', fieldOptions.attributes);
     selectElement.appendChild(
       this.#createElement('option', {
         value: '',
@@ -269,7 +291,7 @@ class GoogleForm {
       let elementToFocus = null;
       for (const [fieldOptions, inputElement, errorElement] of this.#inputElements) {
         if (!this.#checkInputValidity(inputElement, fieldOptions)) {
-          errorElement.textContent = fieldOptions?.errorMessage ?? this.#defaultInvalidError;
+          errorElement.textContent = fieldOptions.errorMessage;
 
           if (!elementToFocus) {
             elementToFocus = inputElement;
@@ -283,8 +305,8 @@ class GoogleForm {
       }
 
       for (const [fieldOptions, radioElements, errorElement] of this.#radioElements) {
-        if (fieldOptions?.isRequired && !radioElements.find((radio) => radio.checked)) {
-          errorElement.textContent = fieldOptions?.errorMessage ?? this.#defaultRequiredError;
+        if (fieldOptions.isRequired && !radioElements.find((radio) => radio.checked)) {
+          errorElement.textContent = fieldOptions.errorMessage;
 
           if (!elementToFocus) {
             elementToFocus = radioElements[0];
@@ -304,8 +326,8 @@ class GoogleForm {
       }
 
       for (const [fieldOptions, selectElement, errorElement] of this.#selectElements) {
-        if (fieldOptions?.isRequired && selectElement.value === '') {
-          errorElement.textContent = fieldOptions?.errorMessage ?? this.#defaultRequiredError;
+        if (fieldOptions.isRequired && selectElement.value === '') {
+          errorElement.textContent = fieldOptions.errorMessage;
 
           if (!elementToFocus) {
             elementToFocus = selectElement;
