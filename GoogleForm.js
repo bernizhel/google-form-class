@@ -265,10 +265,10 @@ class GoogleForm {
 
   #checkInputValidity(element, options) {
     if (element.value === '') {
-      return !fieldOptions.isRequired;
+      return !options.isRequired;
     }
 
-    if (!options.validationFunctions) {
+    if (options.validationFunctions.length === 0) {
       return !element.validity.typeMismatch;
     }
 
