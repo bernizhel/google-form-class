@@ -288,6 +288,6 @@ class GoogleForm {
 
   render(selector) {
     document.querySelector(selector)
-      .appendChild(new GoogleForm(this.#options));
+      .appendChild(new GoogleForm(this.#options).#formElement);
   }
 }
