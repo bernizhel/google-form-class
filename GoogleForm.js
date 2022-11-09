@@ -207,44 +207,56 @@ class GoogleForm {
     return this.#createLabelElement(fieldOptions, checkboxElement, errorElement);
   }
 
-  #createSelectField(fieldOptions) {
-    const selectElement = this.#createElement('select', fieldOptions.attributes);
-    selectElement.appendChild(
-      this.#createElement('option', {
-        value: '',
-        selected: true,
-        disabled: !!fieldOptions.isRequired,
-        hidden: !!fieldOptions.isRequired,
-        innerText: this.#defaultSelectOption,
-      })
-    );
+  #createSelectOptions(fieldOptions) {
+    const optionElements = [];
 
     if (Array.isArray(fieldOptions.type.values)) {
       for (const value of fieldOptions.type.values) {
-        selectElement.appendChild(
+        optionElements.push(
           this.#createElement('option', {
             value,
             innerText: value,
           })
         );
       }
-    } else {
-      for (const [valuesGroup, values] of Object.entries(fieldOptions.type.values)) {
-        const optgroupElement = this.#createElement('optgroup', {
-          label: valuesGroup,
-        });
 
-        for (const value of values) {
-          optgroupElement.appendChild(
-            this.#createElement('option', {
-              value,
-              innerText: value,
-            })
-          );
-        }
+      return optionElements;
+    }
 
-        selectElement.appendChild(optgroupElement);
+    for (const [valuesGroup, values] of Object.entries(fieldOptions.type.values)) {
+      const optgroupElement = this.#createElement('optgroup', {
+        label: valuesGroup,
+      });
+
+      for (const value of values) {
+        optgroupElement.appendChild(
+          this.#createElement('option', {
+            value,
+            innerText: value,
+          })
+        );
       }
+
+      optionElements.push(optgroupElement);
+    }
+
+    return optionElements;
+  }
+
+  #createSelectField(fieldOptions) {
+    const selectElement = this.#createElement('select', fieldOptions.attributes);
+    selectElement.appendChild(
+      this.#createElement('option', {
+        value: '',
+        selected: true,
+        disabled: fieldOptions.isRequired,
+        hidden: fieldOptions.isRequired,
+        innerText: this.#defaultSelectOption,
+      })
+    );
+
+    for (const optionElement of this.#createSelectOptions(fieldOptions)) {
+      selectElement.appendChild(optionElement);
     }
 
     const errorElement = this.#createElement('span');
