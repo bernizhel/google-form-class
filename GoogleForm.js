@@ -36,14 +36,11 @@ class GoogleForm {
     }
 
     for (const field of options.fields) {
-      if (!field?.title || !field?.name || !field?.type?.keyword) {
+      if (!field?.title || !field?.name || !field?.type) {
         return false;
       }
 
-      if (
-        [this.#radioKeyword, this.#selectKeyword].includes(field.type.keyword) &&
-        !field?.type?.values
-      ) {
+      if ([this.#radioKeyword, this.#selectKeyword].includes(field.type) && !field?.values) {
         return false;
       }
     }
@@ -59,7 +56,7 @@ class GoogleForm {
       options.fields[i].validationFunctions ??= [];
 
       options.fields[i].errorMessage ??=
-        options.fields[i].type.keyword === this.#inputKeyword
+        options.fields[i].type === this.#inputKeyword
           ? this.#defaultInvalidError
           : this.#defaultRequiredError;
 
@@ -78,19 +75,19 @@ class GoogleForm {
     }
 
     for (const fieldOptions of options.fields) {
-      if (fieldOptions.type.keyword === this.#inputKeyword) {
+      if (fieldOptions.type === this.#inputKeyword) {
         fieldsetElement.appendChild(this.#createInputField(fieldOptions));
       }
 
-      if (fieldOptions.type.keyword === this.#radioKeyword) {
+      if (fieldOptions.type === this.#radioKeyword) {
         fieldsetElement.appendChild(this.#createRadioField(fieldOptions));
       }
 
-      if (fieldOptions.type.keyword === this.#checkboxKeyword) {
+      if (fieldOptions.type === this.#checkboxKeyword) {
         fieldsetElement.appendChild(this.#createCheckboxField(fieldOptions));
       }
 
-      if (fieldOptions.type.keyword === this.#selectKeyword) {
+      if (fieldOptions.type === this.#selectKeyword) {
         fieldsetElement.appendChild(this.#createSelectField(fieldOptions));
       }
     }
@@ -107,7 +104,7 @@ class GoogleForm {
   }
 
   #createLabelElement(fieldOptions, fieldElement = {}, errorElement = {}) {
-    const isCheckbox = fieldOptions.type.keyword === this.#checkboxKeyword;
+    const isCheckbox = fieldOptions.type === this.#checkboxKeyword;
 
     let labelElement = null;
     if (isCheckbox) {
@@ -169,7 +166,7 @@ class GoogleForm {
     const errorElement = this.#createElement('span');
     this.#radioElements.push([fieldOptions, [], errorElement]);
 
-    for (const value of fieldOptions.type.values) {
+    for (const value of fieldOptions.values) {
       const radioElement = this.#createElement('input', {
         ...fieldOptions.attributes,
         type: 'radio',
@@ -210,8 +207,8 @@ class GoogleForm {
   #createSelectOptions(fieldOptions) {
     const optionElements = [];
 
-    if (Array.isArray(fieldOptions.type.values)) {
-      for (const value of fieldOptions.type.values) {
+    if (Array.isArray(fieldOptions.values)) {
+      for (const value of fieldOptions.values) {
         optionElements.push(
           this.#createElement('option', {
             value,
@@ -223,7 +220,7 @@ class GoogleForm {
       return optionElements;
     }
 
-    for (const [valuesGroup, values] of Object.entries(fieldOptions.type.values)) {
+    for (const [valuesGroup, values] of Object.entries(fieldOptions.values)) {
       const optgroupElement = this.#createElement('optgroup', {
         label: valuesGroup,
       });
@@ -272,7 +269,7 @@ class GoogleForm {
       if (event.code === 'Enter') {
         event.preventDefault();
 
-        if ([this.#radioKeyword, this.#checkboxKeyword].includes(options.type.keyword)) {
+        if ([this.#radioKeyword, this.#checkboxKeyword].includes(options.type)) {
           element.checked = !element.checked;
         } else {
           this.#submitButtonElement.focus();
