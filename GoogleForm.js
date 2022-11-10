@@ -6,10 +6,10 @@ class GoogleForm {
     innerText: 'Submit',
   });
 
-  #inputElements = [];
-  #radioElements = [];
-  #checkboxElements = [];
-  #selectElements = [];
+  #inputElements = {};
+  #radioElements = {};
+  #checkboxElements = {};
+  #selectElements = {};
 
   #defaultInvalidError = 'Please, input correct data.';
   #defaultRequiredError = 'Please, enter this field.';
@@ -141,7 +141,7 @@ class GoogleForm {
     this.#addKeypressHandler(inputElement, fieldOptions);
 
     const errorElement = this.#createElement('span');
-    this.#inputElements.push([fieldOptions, inputElement, errorElement]);
+    this.#inputElements[fieldOptions.name] = [fieldOptions, inputElement, errorElement];
 
     return this.#createLabelElement(fieldOptions, inputElement, errorElement);
   }
@@ -164,7 +164,7 @@ class GoogleForm {
     const innerWrapperElement = this.#createElement('div');
 
     const errorElement = this.#createElement('span');
-    this.#radioElements.push([fieldOptions, [], errorElement]);
+    this.#radioElements[fieldOptions.name] = [fieldOptions, [], errorElement];
 
     for (const value of fieldOptions.values) {
       const radioElement = this.#createElement('input', {
@@ -174,7 +174,7 @@ class GoogleForm {
         value,
       });
       this.#addKeypressHandler(radioElement, fieldOptions);
-      this.#radioElements[this.#radioElements.length - 1][1].push(radioElement);
+      this.#radioElements[fieldOptions.name][1].push(radioElement);
 
       const labelElement = this.#createElement('label');
       labelElement.appendChild(radioElement);
@@ -199,7 +199,7 @@ class GoogleForm {
     this.#addKeypressHandler(checkboxElement, fieldOptions);
 
     const errorElement = this.#createElement('span');
-    this.#checkboxElements.push([fieldOptions, checkboxElement]);
+    this.#checkboxElements[fieldOptions.name] = checkboxElement;
 
     return this.#createLabelElement(fieldOptions, checkboxElement, errorElement);
   }
@@ -257,7 +257,7 @@ class GoogleForm {
     }
 
     const errorElement = this.#createElement('span');
-    this.#selectElements.push([fieldOptions, selectElement, errorElement]);
+    this.#selectElements[fieldOptions.name] = [fieldOptions, selectElement, errorElement];
 
     return this.#createLabelElement(fieldOptions, selectElement, errorElement);
   }
@@ -305,7 +305,9 @@ class GoogleForm {
       let willContinueSubmit = true;
       let elementToFocus = null;
 
-      for (const [fieldOptions, inputElement, errorElement] of this.#inputElements) {
+      for (const [fieldName, [fieldOptions, inputElement, errorElement]] of Object.entries(
+        this.#inputElements
+      )) {
         if (!this.#checkInputValidity(inputElement, fieldOptions)) {
           errorElement.textContent = fieldOptions.errorMessage;
           inputElement.style.border = this.#borderStyle;
@@ -319,11 +321,13 @@ class GoogleForm {
           errorElement.textContent = '';
           inputElement.style.border = '';
 
-          submitData[fieldOptions.name] = inputElement.value;
+          submitData[fieldName] = inputElement.value;
         }
       }
 
-      for (const [fieldOptions, radioElements, errorElement] of this.#radioElements) {
+      for (const [fieldName, [fieldOptions, radioElements, errorElement]] of Object.entries(
+        this.#radioElements
+      )) {
         if (fieldOptions.isRequired && !radioElements.find((radio) => radio.checked)) {
           errorElement.textContent = fieldOptions.errorMessage;
           for (const radioElement of radioElements) {
@@ -341,17 +345,17 @@ class GoogleForm {
             radioElement.style.outline = '';
           }
 
-          submitData[fieldOptions.name] = radioElements.find(
-            (radioElement) => radioElement.checked
-          ).value;
+          submitData[fieldName] = radioElements.find((radioElement) => radioElement.checked).value;
         }
       }
 
-      for (const [fieldOptions, checkboxElement] of this.#checkboxElements) {
-        submitData[fieldOptions.name] = checkboxElement.checked;
+      for (const [fieldName, checkboxElement] of Object.entries(this.#checkboxElements)) {
+        submitData[fieldName] = checkboxElement.checked;
       }
 
-      for (const [fieldOptions, selectElement, errorElement] of this.#selectElements) {
+      for (const [fieldName, [fieldOptions, selectElement, errorElement]] of Object.entries(
+        this.#selectElements
+      )) {
         if (fieldOptions.isRequired && selectElement.value === '') {
           errorElement.textContent = fieldOptions.errorMessage;
           selectElement.style.border = this.#borderStyle;
@@ -365,7 +369,7 @@ class GoogleForm {
           errorElement.textContent = '';
           selectElement.style.border = '';
 
-          submitData[fieldOptions.name] = selectElement.value;
+          submitData[fieldName] = selectElement.value;
         }
       }
 
