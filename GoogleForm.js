@@ -14,6 +14,7 @@ class GoogleForm {
   #defaultInvalidError = 'Please, input correct data.';
   #defaultRequiredError = 'Please, enter this field.';
   #defaultSelectOption = 'Not selected';
+  #borderStyle = '1px solid red';
 
   #inputKeyword = 'input';
   #radioKeyword = 'radio';
@@ -307,6 +308,7 @@ class GoogleForm {
       for (const [fieldOptions, inputElement, errorElement] of this.#inputElements) {
         if (!this.#checkInputValidity(inputElement, fieldOptions)) {
           errorElement.textContent = fieldOptions.errorMessage;
+          inputElement.style.border = this.#borderStyle;
 
           if (!elementToFocus) {
             elementToFocus = inputElement;
@@ -315,6 +317,8 @@ class GoogleForm {
           willContinueSubmit = false;
         } else {
           errorElement.textContent = '';
+          inputElement.style.border = '';
+
           submitData[fieldOptions.name] = inputElement.value;
         }
       }
@@ -322,6 +326,9 @@ class GoogleForm {
       for (const [fieldOptions, radioElements, errorElement] of this.#radioElements) {
         if (fieldOptions.isRequired && !radioElements.find((radio) => radio.checked)) {
           errorElement.textContent = fieldOptions.errorMessage;
+          for (const radioElement of radioElements) {
+            radioElement.style.outline = this.#borderStyle;
+          }
 
           if (!elementToFocus) {
             elementToFocus = radioElements[0];
@@ -330,6 +337,10 @@ class GoogleForm {
           willContinueSubmit = false;
         } else {
           errorElement.textContent = '';
+          for (const radioElement of radioElements) {
+            radioElement.style.outline = '';
+          }
+
           submitData[fieldOptions.name] = radioElements.find(
             (radioElement) => radioElement.checked
           ).value;
@@ -343,6 +354,7 @@ class GoogleForm {
       for (const [fieldOptions, selectElement, errorElement] of this.#selectElements) {
         if (fieldOptions.isRequired && selectElement.value === '') {
           errorElement.textContent = fieldOptions.errorMessage;
+          selectElement.style.border = this.#borderStyle;
 
           if (!elementToFocus) {
             elementToFocus = selectElement;
@@ -351,6 +363,8 @@ class GoogleForm {
           willContinueSubmit = false;
         } else {
           errorElement.textContent = '';
+          selectElement.style.border = '';
+
           submitData[fieldOptions.name] = selectElement.value;
         }
       }
