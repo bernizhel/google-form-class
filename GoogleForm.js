@@ -97,36 +97,36 @@ class GoogleForm {
     fieldsetElement.appendChild(this.#submitButtonElement);
 
     this.#formElement.appendChild(fieldsetElement);
-    this.#addSubmitHandler(this.#formElement);
+    this.#addSubmitHanlder(this.#formElement);
   }
 
-  #createElement(tagName, options) {
-    return Object.assign(document.createElement(tagName), options);
+  #createElement(tagName, attributes = {}) {
+    return Object.assign(document.createElement(tagName), attributes);
   }
 
-  #createLabelElement(fieldOptions, fieldElement = {}, errorElement = {}) {
-    const isCheckbox = fieldOptions.type === this.#checkboxKeyword;
+  #createLabelElement(options, element, errorElement) {
+    const isCheckbox = options.type === this.#checkboxKeyword;
 
     let labelElement = null;
     if (isCheckbox) {
       labelElement = this.#createElement('label');
     } else {
       labelElement = this.#createElement('label', {
-        innerText: fieldOptions.title,
+        innerText: options.title,
       });
     }
 
     const isRequiredElement = this.#createElement('span', {
-      innerText: fieldOptions.isRequired ? '*' : '',
+      innerText: options.isRequired ? '*' : '',
     });
 
     if (isCheckbox) {
-      labelElement.appendChild(fieldElement);
-      labelElement.appendChild(document.createTextNode(fieldOptions.title));
+      labelElement.appendChild(element);
+      labelElement.appendChild(document.createTextNode(options.title));
     } else {
       labelElement.appendChild(isRequiredElement);
       labelElement.appendChild(this.#createElement('br'));
-      labelElement.appendChild(fieldElement);
+      labelElement.appendChild(element);
     }
 
     labelElement.appendChild(this.#createElement('br'));
@@ -136,25 +136,25 @@ class GoogleForm {
     return labelElement;
   }
 
-  #createInputField(fieldOptions) {
-    const inputElement = this.#createElement('input', fieldOptions.attributes);
-    this.#addKeypressHandler(inputElement, fieldOptions);
+  #createInputField(options) {
+    const inputElement = this.#createElement('input', options.attributes);
+    this.#addKeypressHandler(options, inputElement);
 
     const errorElement = this.#createElement('span');
-    this.#inputElements[fieldOptions.name] = [fieldOptions, inputElement, errorElement];
+    this.#inputElements[options.name] = [options, inputElement, errorElement];
 
-    return this.#createLabelElement(fieldOptions, inputElement, errorElement);
+    return this.#createLabelElement(options, inputElement, errorElement);
   }
 
-  #createRadioField(fieldOptions) {
+  #createRadioField(options) {
     const wrapperElement = this.#createElement('div');
 
     const titleElement = this.#createElement('label', {
-      innerText: fieldOptions.title,
+      innerText: options.title,
     });
     titleElement.appendChild(
       this.#createElement('span', {
-        innerText: fieldOptions.isRequired ? '*' : '',
+        innerText: options.isRequired ? '*' : '',
       })
     );
 
@@ -164,17 +164,18 @@ class GoogleForm {
     const innerWrapperElement = this.#createElement('div');
 
     const errorElement = this.#createElement('span');
-    this.#radioElements[fieldOptions.name] = [fieldOptions, [], errorElement];
+    this.#radioElements[options.name] = [options, [], errorElement];
 
-    for (const value of fieldOptions.values) {
+    for (const value of options.values) {
       const radioElement = this.#createElement('input', {
-        ...fieldOptions.attributes,
+        ...options.attributes,
         type: 'radio',
-        name: fieldOptions.name,
+        name: options.name,
         value,
       });
-      this.#addKeypressHandler(radioElement, fieldOptions);
-      this.#radioElements[fieldOptions.name][1].push(radioElement);
+
+      this.#addKeypressHandler(options, radioElement);
+      this.#radioElements[options.name][1].push(radioElement);
 
       const labelElement = this.#createElement('label');
       labelElement.appendChild(radioElement);
@@ -191,24 +192,24 @@ class GoogleForm {
     return wrapperElement;
   }
 
-  #createCheckboxField(fieldOptions) {
+  #createCheckboxField(options) {
     const checkboxElement = this.#createElement('input', {
-      ...fieldOptions.attributes,
+      ...options.attributes,
       type: 'checkbox',
     });
-    this.#addKeypressHandler(checkboxElement, fieldOptions);
+    this.#addKeypressHandler(options, checkboxElement);
 
     const errorElement = this.#createElement('span');
-    this.#checkboxElements[fieldOptions.name] = checkboxElement;
+    this.#checkboxElements[options.name] = checkboxElement;
 
-    return this.#createLabelElement(fieldOptions, checkboxElement, errorElement);
+    return this.#createLabelElement(options, checkboxElement, errorElement);
   }
 
-  #createSelectOptions(fieldOptions) {
+  #createSelectOptions(options) {
     const optionElements = [];
 
-    if (Array.isArray(fieldOptions.values)) {
-      for (const value of fieldOptions.values) {
+    if (Array.isArray(options.values)) {
+      for (const value of options.values) {
         optionElements.push(
           this.#createElement('option', {
             value,
@@ -220,7 +221,7 @@ class GoogleForm {
       return optionElements;
     }
 
-    for (const [valuesGroup, values] of Object.entries(fieldOptions.values)) {
+    for (const [valuesGroup, values] of Object.entries(options.values)) {
       const optgroupElement = this.#createElement('optgroup', {
         label: valuesGroup,
       });
@@ -240,29 +241,29 @@ class GoogleForm {
     return optionElements;
   }
 
-  #createSelectField(fieldOptions) {
-    const selectElement = this.#createElement('select', fieldOptions.attributes);
+  #createSelectField(options) {
+    const selectElement = this.#createElement('select', options.attributes);
     selectElement.appendChild(
       this.#createElement('option', {
         value: '',
         selected: true,
-        disabled: fieldOptions.isRequired,
-        hidden: fieldOptions.isRequired,
+        disabled: options.isRequired,
+        hidden: options.isRequired,
         innerText: this.#defaultSelectOption,
       })
     );
 
-    for (const optionElement of this.#createSelectOptions(fieldOptions)) {
+    for (const optionElement of this.#createSelectOptions(options)) {
       selectElement.appendChild(optionElement);
     }
 
     const errorElement = this.#createElement('span');
-    this.#selectElements[fieldOptions.name] = [fieldOptions, selectElement, errorElement];
+    this.#selectElements[options.name] = [options, selectElement, errorElement];
 
-    return this.#createLabelElement(fieldOptions, selectElement, errorElement);
+    return this.#createLabelElement(options, selectElement, errorElement);
   }
 
-  #addKeypressHandler(element, options) {
+  #addKeypressHandler(options, element) {
     element.addEventListener('keypress', (event) => {
       event.stopImmediatePropagation();
 
@@ -278,7 +279,23 @@ class GoogleForm {
     });
   }
 
-  #checkInputValidity(element, options) {
+  #checkFieldValidity(options, element) {
+    if (options.type === this.#inputKeyword) {
+      return this.#checkInputValidity(options, element);
+    }
+
+    if (options.type === this.#radioKeyword) {
+      return !(options.isRequired && !element.find((radio) => radio.checked));
+    }
+
+    if (options.type === this.#selectKeyword) {
+      return !(options.isRequired && element.value === '');
+    }
+
+    return false;
+  }
+
+  #checkInputValidity(options, element) {
     if (element.value === '') {
       return !options.isRequired;
     }
@@ -296,7 +313,33 @@ class GoogleForm {
     return true;
   }
 
-  #addSubmitHandler(element) {
+  #outlineInvalidField(options, element, isInvalid) {
+    if (options.type === this.#radioKeyword) {
+      for (const radio of element) {
+        radio.style.outline = isInvalid ? this.#borderStyle : '';
+      }
+    } else {
+      element.style.border = isInvalid ? this.#borderStyle : '';
+    }
+  }
+
+  #getFieldValue(options, element) {
+    if ([this.#inputKeyword, this.#selectKeyword].includes(options.type)) {
+      return element.value;
+    }
+
+    if (options.type === this.#radioKeyword) {
+      return element.find((radio) => radio.checked).value;
+    }
+
+    if (options.type === this.#checkboxKeyword) {
+      return element.checked;
+    }
+
+    return null;
+  }
+
+  #addSubmitHanlder(element) {
     element.addEventListener('submit', (event) => {
       event.stopPropagation();
       event.preventDefault();
@@ -305,72 +348,32 @@ class GoogleForm {
       let willContinueSubmit = true;
       let elementToFocus = null;
 
-      for (const [fieldName, [fieldOptions, inputElement, errorElement]] of Object.entries(
-        this.#inputElements
-      )) {
-        if (!this.#checkInputValidity(inputElement, fieldOptions)) {
-          errorElement.textContent = fieldOptions.errorMessage;
-          inputElement.style.border = this.#borderStyle;
+      const elements = [
+        ...Object.entries(this.#inputElements),
+        ...Object.entries(this.#radioElements),
+        ...Object.entries(this.#selectElements),
+      ];
+
+      for (const [name, [options, element, errorElement]] of elements) {
+        if (!this.#checkFieldValidity(options, element)) {
+          errorElement.textContent = options.errorMessage;
+          this.#outlineInvalidField(options, element, true);
 
           if (!elementToFocus) {
-            elementToFocus = inputElement;
+            elementToFocus = options.type === this.#radioKeyword ? element[0] : element;
           }
 
           willContinueSubmit = false;
         } else {
           errorElement.textContent = '';
-          inputElement.style.border = '';
+          this.#outlineInvalidField(options, element, false);
 
-          submitData[fieldName] = inputElement.value;
+          submitData[name] = this.#getFieldValue(options, element);
         }
       }
 
-      for (const [fieldName, [fieldOptions, radioElements, errorElement]] of Object.entries(
-        this.#radioElements
-      )) {
-        if (fieldOptions.isRequired && !radioElements.find((radio) => radio.checked)) {
-          errorElement.textContent = fieldOptions.errorMessage;
-          for (const radioElement of radioElements) {
-            radioElement.style.outline = this.#borderStyle;
-          }
-
-          if (!elementToFocus) {
-            elementToFocus = radioElements[0];
-          }
-
-          willContinueSubmit = false;
-        } else {
-          errorElement.textContent = '';
-          for (const radioElement of radioElements) {
-            radioElement.style.outline = '';
-          }
-
-          submitData[fieldName] = radioElements.find((radioElement) => radioElement.checked).value;
-        }
-      }
-
-      for (const [fieldName, checkboxElement] of Object.entries(this.#checkboxElements)) {
-        submitData[fieldName] = checkboxElement.checked;
-      }
-
-      for (const [fieldName, [fieldOptions, selectElement, errorElement]] of Object.entries(
-        this.#selectElements
-      )) {
-        if (fieldOptions.isRequired && selectElement.value === '') {
-          errorElement.textContent = fieldOptions.errorMessage;
-          selectElement.style.border = this.#borderStyle;
-
-          if (!elementToFocus) {
-            elementToFocus = selectElement;
-          }
-
-          willContinueSubmit = false;
-        } else {
-          errorElement.textContent = '';
-          selectElement.style.border = '';
-
-          submitData[fieldName] = selectElement.value;
-        }
+      for (const [name, element] of Object.entries(this.#checkboxElements)) {
+        submitData[name] = element.checked;
       }
 
       if (!willContinueSubmit) {
