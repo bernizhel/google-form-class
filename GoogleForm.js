@@ -122,7 +122,6 @@ class GoogleForm {
     if (isCheckbox) {
       labelElement.appendChild(fieldElement);
       labelElement.appendChild(document.createTextNode(fieldOptions.title));
-      labelElement.appendChild(isRequiredElement);
     } else {
       labelElement.appendChild(isRequiredElement);
       labelElement.appendChild(this.#createElement('br'));
