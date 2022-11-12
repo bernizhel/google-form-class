@@ -107,26 +107,29 @@ class GoogleForm {
   }
 
   #createLabelElement(options, element, errorElement) {
-    let labelElement = null;
-
     if (options.type === this.#checkboxKeyword) {
-      labelElement = this.#createElement('label');
+      let labelElement = this.#createElement('label');
 
       labelElement.appendChild(element);
       labelElement.appendChild(document.createTextNode(options.title));
-    } else {
-      labelElement = this.#createElement('label', {
-        innerText: options.title,
-      });
 
-      labelElement.appendChild(
-        this.#createElement('span', {
-          innerText: options.isRequired ? '*' : '',
-        })
-      );
       labelElement.appendChild(this.#createElement('br'));
-      labelElement.appendChild(element);
+      labelElement.appendChild(this.#createElement('br'));
+
+      return labelElement;
     }
+
+    let labelElement = this.#createElement('label', {
+      innerText: options.title,
+    });
+
+    labelElement.appendChild(
+      this.#createElement('span', {
+        innerText: options.isRequired ? '*' : '',
+      })
+    );
+    labelElement.appendChild(this.#createElement('br'));
+    labelElement.appendChild(element);
 
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(errorElement);
