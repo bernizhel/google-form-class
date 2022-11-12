@@ -1,15 +1,12 @@
 class GoogleForm {
   #options = {};
+  #fields = {};
+
   #formElement = this.#createElement('form', { noValidate: true });
   #submitButtonElement = this.#createElement('button', {
     type: 'submit',
     innerText: 'Submit',
   });
-
-  #inputElements = {};
-  #radioElements = {};
-  #checkboxElements = {};
-  #selectElements = {};
 
   #defaultInvalidError = 'Please, input correct data.';
   #defaultRequiredError = 'Please, enter this field.';
@@ -141,7 +138,7 @@ class GoogleForm {
     this.#addKeypressHandler(options, inputElement);
 
     const errorElement = this.#createElement('span');
-    this.#inputElements[options.name] = [options, inputElement, errorElement];
+    this.#fields[options.name] = [options.type, options, inputElement, errorElement];
 
     return this.#createLabelElement(options, inputElement, errorElement);
   }
@@ -164,7 +161,7 @@ class GoogleForm {
     const innerWrapperElement = this.#createElement('div');
 
     const errorElement = this.#createElement('span');
-    this.#radioElements[options.name] = [options, [], errorElement];
+    this.#fields[options.name] = [options.type, options, [], errorElement];
 
     for (const value of options.values) {
       const radioElement = this.#createElement('input', {
@@ -175,7 +172,7 @@ class GoogleForm {
       });
 
       this.#addKeypressHandler(options, radioElement);
-      this.#radioElements[options.name][1].push(radioElement);
+      this.#fields[options.name][2].push(radioElement);
 
       const labelElement = this.#createElement('label');
       labelElement.appendChild(radioElement);
@@ -200,7 +197,7 @@ class GoogleForm {
     this.#addKeypressHandler(options, checkboxElement);
 
     const errorElement = this.#createElement('span');
-    this.#checkboxElements[options.name] = checkboxElement;
+    this.#fields[options.name] = [options.type, checkboxElement];
 
     return this.#createLabelElement(options, checkboxElement, errorElement);
   }
@@ -258,7 +255,7 @@ class GoogleForm {
     }
 
     const errorElement = this.#createElement('span');
-    this.#selectElements[options.name] = [options, selectElement, errorElement];
+    this.#fields[options.name] = [options.type, options, selectElement, errorElement];
 
     return this.#createLabelElement(options, selectElement, errorElement);
   }
@@ -329,6 +326,10 @@ class GoogleForm {
     return { isValid: true, value: elements.find((element) => element.checked).value };
   }
 
+  #validateCheckboxField(element) {
+    return { isValid: true, value: element.checked };
+  }
+
   #validateSelectField(options, element, errorElement) {
     if (options.isRequired && element.value === '') {
       errorElement.textContent = options.errorMessage;
@@ -343,6 +344,13 @@ class GoogleForm {
     return { isValid: true, value: element.value };
   }
 
+  #validationMethods = {
+    [this.#inputKeyword]: this.#validateInputField.bind(this),
+    [this.#radioKeyword]: this.#validateRadioField.bind(this),
+    [this.#selectKeyword]: this.#validateSelectField.bind(this),
+    [this.#checkboxKeyword]: this.#validateCheckboxField.bind(this),
+  };
+
   #addSubmitHanlder(element) {
     element.addEventListener('submit', (event) => {
       event.stopPropagation();
@@ -352,36 +360,8 @@ class GoogleForm {
       let willContinueSubmit = true;
       let elementToFocus = null;
 
-      for (const [name, [options, element, errorElement]] of Object.entries(this.#inputElements)) {
-        const returnData = this.#validateInputField(options, element, errorElement);
-
-        if (!returnData.isValid) {
-          elementToFocus ??= returnData.element;
-          willContinueSubmit = false;
-          continue;
-        }
-
-        submitData[name] = returnData.value;
-      }
-
-      for (const [name, [options, elements, errorElement]] of Object.entries(this.#radioElements)) {
-        const returnData = this.#validateRadioField(options, elements, errorElement);
-
-        if (!returnData.isValid) {
-          elementToFocus ??= returnData.element;
-          willContinueSubmit = false;
-          continue;
-        }
-
-        submitData[name] = returnData.value;
-      }
-
-      for (const [name, element] of Object.entries(this.#checkboxElements)) {
-        submitData[name] = element.checked;
-      }
-
-      for (const [name, [options, element, errorElement]] of Object.entries(this.#selectElements)) {
-        const returnData = this.#validateSelectField(options, element, errorElement);
+      for (const [name, field] of Object.entries(this.#fields)) {
+        const returnData = this.#validationMethods[field[0]](...field.slice(1));
 
         if (!returnData.isValid) {
           elementToFocus ??= returnData.element;
