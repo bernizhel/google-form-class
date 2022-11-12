@@ -99,7 +99,7 @@ class GoogleForm {
     fieldsetElement.appendChild(this.#submitButtonElement);
 
     this.#formElement.appendChild(fieldsetElement);
-    this.#addSubmitHanlder(this.#formElement);
+    this.#addSubmitHandler(this.#formElement);
   }
 
   #createElement(tag, attributes = {}) {
@@ -367,7 +367,7 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
-  #addSubmitHanlder(element) {
+  #addSubmitHandler(element) {
     element.addEventListener('submit', (event) => {
       event.stopPropagation();
       event.preventDefault();
