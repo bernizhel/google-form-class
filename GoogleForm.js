@@ -279,22 +279,6 @@ class GoogleForm {
     });
   }
 
-  #checkFieldValidity(options, element) {
-    if (options.type === this.#inputKeyword) {
-      return this.#checkInputValidity(options, element);
-    }
-
-    if (options.type === this.#radioKeyword) {
-      return !(options.isRequired && !element.find((radio) => radio.checked));
-    }
-
-    if (options.type === this.#selectKeyword) {
-      return !(options.isRequired && element.value === '');
-    }
-
-    return false;
-  }
-
   #checkInputValidity(options, element) {
     if (element.value === '') {
       return !options.isRequired;
@@ -313,30 +297,50 @@ class GoogleForm {
     return true;
   }
 
-  #outlineInvalidField(options, element, isInvalid) {
-    if (options.type === this.#radioKeyword) {
-      for (const radio of element) {
-        radio.style.outline = isInvalid ? this.#borderStyle : '';
-      }
-    } else {
-      element.style.border = isInvalid ? this.#borderStyle : '';
+  #validateInputField(options, element, errorElement) {
+    if (!this.#checkInputValidity(options, element)) {
+      errorElement.textContent = options.errorMessage;
+      element.style.border = this.#borderStyle;
+
+      return { isValid: false, element };
     }
+
+    errorElement.textContent = '';
+    element.style.border = '';
+
+    return { isValid: true, value: element.value };
   }
 
-  #getFieldValue(options, element) {
-    if ([this.#inputKeyword, this.#selectKeyword].includes(options.type)) {
-      return element.value;
+  #validateRadioField(options, elements, errorElement) {
+    if (options.isRequired && !elements.find((element) => element.checked)) {
+      errorElement.textContent = options.errorMessage;
+      for (const element of elements) {
+        element.style.outline = this.#borderStyle;
+      }
+
+      return { isValid: false, element: elements[0] };
     }
 
-    if (options.type === this.#radioKeyword) {
-      return element.find((radio) => radio.checked).value;
+    errorElement.textContent = '';
+    for (const element of elements) {
+      element.style.outline = '';
     }
 
-    if (options.type === this.#checkboxKeyword) {
-      return element.checked;
+    return { isValid: true, value: elements.find((element) => element.checked).value };
+  }
+
+  #validateSelectField(options, element, errorElement) {
+    if (options.isRequired && element.value === '') {
+      errorElement.textContent = options.errorMessage;
+      element.style.border = this.#borderStyle;
+
+      return { isValid: false, element };
     }
 
-    return null;
+    errorElement.textContent = '';
+    element.style.border = '';
+
+    return { isValid: true, value: element.value };
   }
 
   #addSubmitHanlder(element) {
@@ -348,32 +352,44 @@ class GoogleForm {
       let willContinueSubmit = true;
       let elementToFocus = null;
 
-      const elements = [
-        ...Object.entries(this.#inputElements),
-        ...Object.entries(this.#radioElements),
-        ...Object.entries(this.#selectElements),
-      ];
+      for (const [name, [options, element, errorElement]] of Object.entries(this.#inputElements)) {
+        const returnData = this.#validateInputField(options, element, errorElement);
 
-      for (const [name, [options, element, errorElement]] of elements) {
-        if (!this.#checkFieldValidity(options, element)) {
-          errorElement.textContent = options.errorMessage;
-          this.#outlineInvalidField(options, element, true);
-
-          if (!elementToFocus) {
-            elementToFocus = options.type === this.#radioKeyword ? element[0] : element;
-          }
-
+        if (!returnData.isValid) {
+          elementToFocus ??= returnData.element;
           willContinueSubmit = false;
-        } else {
-          errorElement.textContent = '';
-          this.#outlineInvalidField(options, element, false);
-
-          submitData[name] = this.#getFieldValue(options, element);
+          continue;
         }
+
+        submitData[name] = returnData.value;
+      }
+
+      for (const [name, [options, elements, errorElement]] of Object.entries(this.#radioElements)) {
+        const returnData = this.#validateRadioField(options, elements, errorElement);
+
+        if (!returnData.isValid) {
+          elementToFocus ??= returnData.element;
+          willContinueSubmit = false;
+          continue;
+        }
+
+        submitData[name] = returnData.value;
       }
 
       for (const [name, element] of Object.entries(this.#checkboxElements)) {
         submitData[name] = element.checked;
+      }
+
+      for (const [name, [options, element, errorElement]] of Object.entries(this.#selectElements)) {
+        const returnData = this.#validateSelectField(options, element, errorElement);
+
+        if (!returnData.isValid) {
+          elementToFocus ??= returnData.element;
+          willContinueSubmit = false;
+          continue;
+        }
+
+        submitData[name] = returnData.value;
       }
 
       if (!willContinueSubmit) {
