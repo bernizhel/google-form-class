@@ -66,7 +66,7 @@ class GoogleForm {
   }
 
   #setOptions(options) {
-    options.description ??= {};
+    options.description ??= '';
 
     for (let i = 0; i < options.fields.length; i++) {
       options.fields[i].isRequired ??= false;
