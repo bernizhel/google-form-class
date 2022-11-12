@@ -138,7 +138,11 @@ class GoogleForm {
     this.#addKeypressHandler(options, inputElement);
 
     const errorElement = this.#createElement('span');
-    this.#fields[options.name] = [options.type, options, inputElement, errorElement];
+    this.#fields[options.name] = {
+      options,
+      element: inputElement,
+      errorElement,
+    };
 
     return this.#createLabelElement(options, inputElement, errorElement);
   }
@@ -161,7 +165,7 @@ class GoogleForm {
     const innerWrapperElement = this.#createElement('div');
 
     const errorElement = this.#createElement('span');
-    this.#fields[options.name] = [options.type, options, [], errorElement];
+    this.#fields[options.name] = { options, elements: [], errorElement };
 
     for (const value of options.values) {
       const radioElement = this.#createElement('input', {
@@ -172,7 +176,7 @@ class GoogleForm {
       });
 
       this.#addKeypressHandler(options, radioElement);
-      this.#fields[options.name][2].push(radioElement);
+      this.#fields[options.name].elements.push(radioElement);
 
       const labelElement = this.#createElement('label');
       labelElement.appendChild(radioElement);
@@ -197,7 +201,7 @@ class GoogleForm {
     this.#addKeypressHandler(options, checkboxElement);
 
     const errorElement = this.#createElement('span');
-    this.#fields[options.name] = [options.type, checkboxElement];
+    this.#fields[options.name] = { options, element: checkboxElement };
 
     return this.#createLabelElement(options, checkboxElement, errorElement);
   }
@@ -255,7 +259,11 @@ class GoogleForm {
     }
 
     const errorElement = this.#createElement('span');
-    this.#fields[options.name] = [options.type, options, selectElement, errorElement];
+    this.#fields[options.name] = {
+      options,
+      element: selectElement,
+      errorElement,
+    };
 
     return this.#createLabelElement(options, selectElement, errorElement);
   }
@@ -294,7 +302,7 @@ class GoogleForm {
     return true;
   }
 
-  #validateInputField(options, element, errorElement) {
+  #validateInputField({ options, element, errorElement }) {
     if (!this.#checkInputValidity(options, element)) {
       errorElement.textContent = options.errorMessage;
       element.style.border = this.#borderStyle;
@@ -308,7 +316,7 @@ class GoogleForm {
     return { isValid: true, value: element.value };
   }
 
-  #validateRadioField(options, elements, errorElement) {
+  #validateRadioField({ options, elements, errorElement }) {
     if (options.isRequired && !elements.find((element) => element.checked)) {
       errorElement.textContent = options.errorMessage;
       for (const element of elements) {
@@ -326,11 +334,11 @@ class GoogleForm {
     return { isValid: true, value: elements.find((element) => element.checked).value };
   }
 
-  #validateCheckboxField(element) {
+  #validateCheckboxField({ element }) {
     return { isValid: true, value: element.checked };
   }
 
-  #validateSelectField(options, element, errorElement) {
+  #validateSelectField({ options, element, errorElement }) {
     if (options.isRequired && element.value === '') {
       errorElement.textContent = options.errorMessage;
       element.style.border = this.#borderStyle;
@@ -361,7 +369,7 @@ class GoogleForm {
       let elementToFocus = null;
 
       for (const [name, field] of Object.entries(this.#fields)) {
-        const returnData = this.#validationMethods[field[0]](...field.slice(1));
+        const returnData = this.#validationMethods[field.options.type](field);
 
         if (!returnData.isValid) {
           elementToFocus ??= returnData.element;
