@@ -350,7 +350,7 @@ class GoogleForm {
   }
 
   #validateCheckboxField({ element }) {
-    return this.#generateValidationData(true, element.value);
+    return this.#generateValidationData(true, element.checked);
   }
 
   #validateSelectField({ options, element, errorElement }) {
