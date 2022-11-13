@@ -2,10 +2,10 @@ class GoogleForm {
   #options = {};
   #fields = {};
 
-  #inputKeyword = 'input';
-  #radioKeyword = 'radio';
-  #checkboxKeyword = 'checkbox';
-  #selectKeyword = 'select';
+  #INPUT_KEYWORD = 'input';
+  #RADIO_KEYWORD = 'radio';
+  #CHECKBOX_KEYWORD = 'checkbox';
+  #SELECT_KEYWORD = 'select';
 
   #formElement = this.#createElement('form', { noValidate: true });
   #submitButtonElement = this.#createElement('button', {
@@ -13,25 +13,25 @@ class GoogleForm {
     innerText: 'Submit',
   });
 
-  #defaultInvalidError = 'Please, input correct data.';
-  #defaultRequiredError = 'Please, enter this field.';
-  #defaultSelectOption = 'Not selected';
+  #DEFAULT_INVALID_ERROR = 'Please, input correct data.';
+  #DEFAULT_REQUIRED_ERROR = 'Please, enter this field.';
+  #DEFAULT_SELECT_OPTION = 'Not selected';
 
-  #borderStyleInvalid = '1px solid red';
-  #borderStyleValid = '';
+  #BORDER_STYLE_INVALID = '1px solid red';
+  #BORDER_STYLE_VALID = '';
 
   #creationMethods = {
-    [this.#inputKeyword]: this.#createInputField.bind(this),
-    [this.#radioKeyword]: this.#createRadioField.bind(this),
-    [this.#checkboxKeyword]: this.#createCheckboxField.bind(this),
-    [this.#selectKeyword]: this.#createSelectField.bind(this),
+    [this.#INPUT_KEYWORD]: this.#createInputField.bind(this),
+    [this.#RADIO_KEYWORD]: this.#createRadioField.bind(this),
+    [this.#CHECKBOX_KEYWORD]: this.#createCheckboxField.bind(this),
+    [this.#SELECT_KEYWORD]: this.#createSelectField.bind(this),
   };
 
   #validationMethods = {
-    [this.#inputKeyword]: this.#validateInputField.bind(this),
-    [this.#radioKeyword]: this.#validateRadioField.bind(this),
-    [this.#selectKeyword]: this.#validateSelectField.bind(this),
-    [this.#checkboxKeyword]: this.#validateCheckboxField.bind(this),
+    [this.#INPUT_KEYWORD]: this.#validateInputField.bind(this),
+    [this.#RADIO_KEYWORD]: this.#validateRadioField.bind(this),
+    [this.#SELECT_KEYWORD]: this.#validateSelectField.bind(this),
+    [this.#CHECKBOX_KEYWORD]: this.#validateCheckboxField.bind(this),
   };
 
   constructor(options) {
@@ -55,7 +55,7 @@ class GoogleForm {
       }
 
       if (
-        [this.#radioKeyword, this.#selectKeyword].includes(fieldOptions.type) &&
+        [this.#RADIO_KEYWORD, this.#SELECT_KEYWORD].includes(fieldOptions.type) &&
         !fieldOptions?.values
       ) {
         return false;
@@ -73,9 +73,9 @@ class GoogleForm {
       options.fields[i].validationFunctions ??= [];
 
       options.fields[i].errorMessage ??=
-        options.fields[i].type === this.#inputKeyword
-          ? this.#defaultInvalidError
-          : this.#defaultRequiredError;
+        options.fields[i].type === this.#INPUT_KEYWORD
+          ? this.#DEFAULT_INVALID_ERROR
+          : this.#DEFAULT_REQUIRED_ERROR;
 
       options.fields[i].attributes ??= {};
     }
@@ -107,7 +107,7 @@ class GoogleForm {
   }
 
   #createLabelElement(options, element, errorElement) {
-    if (options.type === this.#checkboxKeyword) {
+    if (options.type === this.#CHECKBOX_KEYWORD) {
       let labelElement = this.#createElement('label');
 
       labelElement.appendChild(element);
@@ -145,7 +145,7 @@ class GoogleForm {
       if (event.code === 'Enter') {
         event.preventDefault();
 
-        if ([this.#radioKeyword, this.#checkboxKeyword].includes(options.type)) {
+        if ([this.#RADIO_KEYWORD, this.#CHECKBOX_KEYWORD].includes(options.type)) {
           element.checked = !element.checked;
         } else {
           this.#submitButtonElement.focus();
@@ -276,7 +276,7 @@ class GoogleForm {
         selected: true,
         disabled: options.isRequired,
         hidden: options.isRequired,
-        innerText: this.#defaultSelectOption,
+        innerText: this.#DEFAULT_SELECT_OPTION,
       })
     );
 
@@ -320,13 +320,13 @@ class GoogleForm {
   #validateInputField({ options, element, errorElement }) {
     if (!this.#checkInputValidity(options, element)) {
       errorElement.textContent = options.errorMessage;
-      element.style.border = this.#borderStyleInvalid;
+      element.style.border = this.#BORDER_STYLE_INVALID;
 
       return this.#generateValidationData(false, element);
     }
 
     errorElement.textContent = '';
-    element.style.border = this.#borderStyleValid;
+    element.style.border = this.#BORDER_STYLE_VALID;
 
     return this.#generateValidationData(true, element.value);
   }
@@ -335,7 +335,7 @@ class GoogleForm {
     if (options.isRequired && !elements.find((element) => element.checked)) {
       errorElement.textContent = options.errorMessage;
       for (const element of elements) {
-        element.style.outline = this.#borderStyleInvalid;
+        element.style.outline = this.#BORDER_STYLE_INVALID;
       }
 
       return this.#generateValidationData(false, elements[0]);
@@ -343,7 +343,7 @@ class GoogleForm {
 
     errorElement.textContent = '';
     for (const element of elements) {
-      element.style.outline = this.#borderStyleValid;
+      element.style.outline = this.#BORDER_STYLE_VALID;
     }
 
     return this.#generateValidationData(true, elements.find((element) => element.checked).value);
@@ -356,13 +356,13 @@ class GoogleForm {
   #validateSelectField({ options, element, errorElement }) {
     if (options.isRequired && element.value === '') {
       errorElement.textContent = options.errorMessage;
-      element.style.border = this.#borderStyleInvalid;
+      element.style.border = this.#BORDER_STYLE_INVALID;
 
       return this.#generateValidationData(false, element);
     }
 
     errorElement.textContent = '';
-    element.style.border = this.#borderStyleValid;
+    element.style.border = this.#BORDER_STYLE_VALID;
 
     return this.#generateValidationData(true, element.value);
   }
