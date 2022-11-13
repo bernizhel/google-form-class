@@ -106,20 +106,8 @@ class GoogleForm {
     return Object.assign(document.createElement(tag), attributes);
   }
 
-  #createLabelElement(options, element, errorElement) {
-    if (options.type === this.#CHECKBOX_KEYWORD) {
-      let labelElement = this.#createElement('label');
-
-      labelElement.appendChild(element);
-      labelElement.appendChild(document.createTextNode(options.title));
-
-      labelElement.appendChild(this.#createElement('br'));
-      labelElement.appendChild(this.#createElement('br'));
-
-      return labelElement;
-    }
-
-    let labelElement = this.#createElement('label', {
+  #createInputSelectLabelElement(options, element, errorElement) {
+    const labelElement = this.#createElement('label', {
       innerText: options.title,
     });
 
@@ -166,7 +154,7 @@ class GoogleForm {
       errorElement,
     };
 
-    return this.#createLabelElement(options, inputElement, errorElement);
+    return this.#createInputSelectLabelElement(options, inputElement, errorElement);
   }
 
   #createRadioField(options) {
@@ -223,11 +211,17 @@ class GoogleForm {
     });
     this.#addKeypressHandler(options, checkboxElement);
 
-    const errorElement = this.#createElement('span');
-
     this.#fields[options.name] = { options, element: checkboxElement };
 
-    return this.#createLabelElement(options, checkboxElement, errorElement);
+    const labelElement = this.#createElement('label');
+
+    labelElement.appendChild(checkboxElement);
+    labelElement.appendChild(document.createTextNode(options.title));
+
+    labelElement.appendChild(this.#createElement('br'));
+    labelElement.appendChild(this.#createElement('br'));
+
+    return labelElement;
   }
 
   #createSelectOptions(options) {
@@ -292,7 +286,7 @@ class GoogleForm {
       errorElement,
     };
 
-    return this.#createLabelElement(options, selectElement, errorElement);
+    return this.#createInputSelectLabelElement(options, selectElement, errorElement);
   }
 
   #checkInputValidity(options, element) {
