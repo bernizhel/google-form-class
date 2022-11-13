@@ -142,17 +142,17 @@ class GoogleForm {
     });
   }
 
+  #setField(field) {
+    this.#fields[field.options.name] = field;
+  }
+
   #createInputField(options) {
     const inputElement = this.#createElement('input', options.attributes);
     this.#addKeypressHandler(options, inputElement);
 
     const errorElement = this.#createElement('span');
 
-    this.#fields[options.name] = {
-      options,
-      element: inputElement,
-      errorElement,
-    };
+    this.#setField({ options, element: inputElement, errorElement });
 
     return this.#createInputSelectLabelElement(options, inputElement, errorElement);
   }
@@ -176,7 +176,7 @@ class GoogleForm {
 
     const errorElement = this.#createElement('span');
 
-    this.#fields[options.name] = { options, elements: [], errorElement };
+    const radioField = { options, elements: [], errorElement };
 
     for (const value of options.values) {
       const radioElement = this.#createElement('input', {
@@ -187,7 +187,7 @@ class GoogleForm {
       });
       this.#addKeypressHandler(options, radioElement);
 
-      this.#fields[options.name].elements.push(radioElement);
+      radioField.elements.push(radioElement);
 
       const labelElement = this.#createElement('label');
       labelElement.appendChild(radioElement);
@@ -196,6 +196,8 @@ class GoogleForm {
       radiosContainerElement.appendChild(labelElement);
       radiosContainerElement.appendChild(this.#createElement('br'));
     }
+
+    this.#setField(radioField);
 
     containerElement.appendChild(radiosContainerElement);
     containerElement.appendChild(errorElement);
@@ -211,7 +213,7 @@ class GoogleForm {
     });
     this.#addKeypressHandler(options, checkboxElement);
 
-    this.#fields[options.name] = { options, element: checkboxElement };
+    this.#setField({ options, element: checkboxElement });
 
     const labelElement = this.#createElement('label');
 
@@ -280,11 +282,7 @@ class GoogleForm {
 
     const errorElement = this.#createElement('span');
 
-    this.#fields[options.name] = {
-      options,
-      element: selectElement,
-      errorElement,
-    };
+    this.#setField({ options, element: selectElement, errorElement });
 
     return this.#createInputSelectLabelElement(options, selectElement, errorElement);
   }
