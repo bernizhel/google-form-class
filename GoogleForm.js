@@ -359,34 +359,73 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
+  #submitHandler(event) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    let elementToFocus = null;
+    let willContinueSubmit = true;
+    const submitData = {};
+
+    for (const [name, field] of Object.entries(this.#fields)) {
+      const validationData = this.#validationMethods[field.options.type](field);
+
+      if (!validationData.isValid) {
+        elementToFocus ??= validationData.data;
+        willContinueSubmit = false;
+        continue;
+      }
+
+      submitData[name] = validationData.data;
+    }
+
+    if (!willContinueSubmit) {
+      elementToFocus.focus();
+      return;
+    }
+
+    this.#submit(submitData, this.#callback);
+  }
+
+  #submitHandlerNew = null;
+
   #addSubmitHandler(element) {
-    element.addEventListener('submit', (event) => {
-      event.stopPropagation();
-      event.preventDefault();
+    this.#submitHandlerNew = this.#submitHandler.bind(this);
+    element.addEventListener('submit', this.#submitHandlerNew);
+  }
 
-      let elementToFocus = null;
-      let willContinueSubmit = true;
-      const submitData = {};
+  #removeSubmitHandler(element) {
+    element.removeEventListener('submit', this.#submitHandlerNew);
+    this.#submitHandlerNew = null;
+  }
 
-      for (const [name, field] of Object.entries(this.#fields)) {
-        const validationData = this.#validationMethods[field.options.type](field);
+  #isSubmitting = false;
+  #callback = () => {
+    console.log('test');
+  };
 
-        if (!validationData.isValid) {
-          elementToFocus ??= validationData.data;
-          willContinueSubmit = false;
-          continue;
-        }
+  #submit(data, cb) {
+    if (this.#isSubmitting) {
+      return;
+    }
 
-        submitData[name] = validationData.data;
-      }
+    this.#isSubmitting = true;
 
-      if (!willContinueSubmit) {
-        elementToFocus.focus();
-        return;
-      }
+    this.#submitButtonElement.innerText = 'Loading...';
 
-      event.data = submitData;
-    });
+    setTimeout(() => {
+      cb(data);
+
+      this.#submitButtonElement.innerText = 'Submit';
+
+      this.#isSubmitting = false;
+    }, 1000);
+  }
+
+  onSubmit(callback) {
+    this.#removeSubmitHandler(this.#formElement);
+    this.#callback = callback;
+    this.#addSubmitHandler(this.#formElement);
   }
 
   render(selector) {
