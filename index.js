@@ -91,4 +91,11 @@ const sampleForm = new GoogleForm({
 sampleForm.render('.google-form');
 sampleForm.render('.google-form');
 
-sampleForm.onSubmit(console.table);
+document.querySelectorAll('.google-form form').forEach((form) =>
+  form.addEventListener('submit', (event) => {
+    if (!event.data) {
+      return;
+    }
+    console.table(event.data);
+  })
+);

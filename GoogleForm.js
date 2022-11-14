@@ -385,33 +385,8 @@ class GoogleForm {
         return;
       }
 
-      this.#submit(submitData);
+      event.data = submitData;
     });
-  }
-
-  #isSubmitting = false;
-  #callback = () => {};
-
-  #submit(data) {
-    if (this.#isSubmitting) {
-      return;
-    }
-
-    this.#isSubmitting = true;
-
-    this.#submitButtonElement.innerText = 'Loading...';
-
-    setTimeout(() => {
-      this.#callback(data);
-
-      this.#submitButtonElement.innerText = 'Submit';
-
-      this.#isSubmitting = false;
-    }, 1000);
-  }
-
-  onSubmit(callback) {
-    this.#callback = callback;
   }
 
   render(selector) {
