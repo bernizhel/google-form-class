@@ -100,7 +100,6 @@ class GoogleForm {
 
     this.#formElement.appendChild(fieldsetElement);
     this.#addSubmitHandler.call(this, this.#formElement, this.#submit);
-    this.onSubmit(console.table);
   }
 
   #createElement(tag, attributes = {}) {
@@ -360,6 +359,12 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
+  #isSubmitting = false;
+
+  #callback = null;
+  setCallback = (callback) => (this.#callback = callback);
+  getCallback = () => this.#callback;
+
   #submitHandler(callback, event) {
     event.stopPropagation();
     event.preventDefault();
@@ -384,14 +389,17 @@ class GoogleForm {
       elementToFocus.focus();
       return;
     }
-
-    callback(submitData);
+    console.log('submitHandler START');
+    console.log(this.getCallback());
+    console.log(this);
+    console.log('submitHandler END');
+    callback(this.getCallback(), submitData);
   }
 
   #submitHandlerNew = null;
 
   #addSubmitHandler(element, callback) {
-    this.#submitHandlerNew = this.#submitHandler.bind(this, callback.bind(this, this.#callback)); // here's the thing
+    this.#submitHandlerNew = this.#submitHandler.bind(this, callback); // here's the thing
 
     element.addEventListener('submit', this.#submitHandlerNew);
   }
@@ -402,11 +410,6 @@ class GoogleForm {
     this.#submitHandlerNew = null;
   }
 
-  #isSubmitting = false;
-  #callback = () => {
-    console.log('class init');
-  };
-
   #submit(callback, data) {
     if (this.#isSubmitting) {
       return;
@@ -416,19 +419,36 @@ class GoogleForm {
 
     this.#submitButtonElement.innerText = 'Loading...';
 
-    setTimeout(() => {
-      callback(data);
+    console.log('submit START');
+    console.log(this.getCallback());
+    console.log(callback);
+    console.log(this);
+    console.log('submit END');
 
-      this.#submitButtonElement.innerText = 'Submit';
+    setTimeout(
+      (() => {
+        callback(data);
 
-      this.#isSubmitting = false;
-    }, 1000);
+        this.#submitButtonElement.innerText = 'Submit';
+
+        this.#isSubmitting = false;
+      }).bind(this),
+      1000
+    );
   }
 
   onSubmit(callback) {
-    this.#removeSubmitHandler.call(this, this.#formElement);
-    this.#callback = callback;
-    this.#addSubmitHandler.call(this, this.#formElement, this.#submit);
+    this.#removeSubmitHandler(this.#formElement);
+    console.log('onSubmit START');
+    console.log(callback);
+    console.log(this.getCallback());
+    this.setCallback(callback);
+    console.log(this.getCallback());
+    console.log(this);
+    console.log('onSubmit END');
+    // it is now called in the previous (before setting the callback)
+    // `this` context so the callback is still `null` there
+    this.#addSubmitHandler(this.#formElement);
   }
 
   render(selector) {
