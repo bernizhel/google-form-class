@@ -14,4 +14,4 @@ const sampleForm = new GoogleForm({
 sampleForm.render('.google-form');
 sampleForm.render('.google-form');
 
-sampleForm.onSubmit.call(sampleForm, console.table);
+sampleForm.onSubmit(console.table);

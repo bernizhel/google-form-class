@@ -41,6 +41,7 @@ class GoogleForm {
       );
     }
     this.#setOptions(options);
+    this.callback = () => {};
     this.#initializeForm(options);
   }
 
@@ -99,7 +100,8 @@ class GoogleForm {
     fieldsetElement.appendChild(this.#submitButtonElement);
 
     this.#formElement.appendChild(fieldsetElement);
-    this.#addSubmitHandler.call(this, this.#formElement, this.#submit);
+    this.submitHandler = this.submitHandler.bind(this);
+    this.#addSubmitHandler(this.#formElement);
   }
 
   #createElement(tag, attributes = {}) {
@@ -359,13 +361,10 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
-  #isSubmitting = false;
-
-  #callback = null;
-  setCallback = (callback) => (this.#callback = callback);
-  getCallback = () => this.#callback;
-
-  #submitHandler(callback, event) {
+  // this one is not notified when `this` is changed
+  // HERE IS THE PROBLEM
+  // THIS METHOD SAVES `THIS` AND DOESN'T GET NOTIFIED WHEN `THIS` IS CHANGED
+  submitHandler(event) {
     event.stopPropagation();
     event.preventDefault();
 
@@ -389,28 +388,9 @@ class GoogleForm {
       elementToFocus.focus();
       return;
     }
-    console.log('submitHandler START');
-    console.log(this.getCallback());
-    console.log(this);
-    console.log('submitHandler END');
-    callback(this.getCallback(), submitData);
-  }
 
-  #submitHandlerNew = null;
+    console.log(this.callback);
 
-  #addSubmitHandler(element, callback) {
-    this.#submitHandlerNew = this.#submitHandler.bind(this, callback); // here's the thing
-
-    element.addEventListener('submit', this.#submitHandlerNew);
-  }
-
-  #removeSubmitHandler(element) {
-    element.removeEventListener('submit', this.#submitHandlerNew);
-
-    this.#submitHandlerNew = null;
-  }
-
-  #submit(callback, data) {
     if (this.#isSubmitting) {
       return;
     }
@@ -419,33 +399,29 @@ class GoogleForm {
 
     this.#submitButtonElement.innerText = 'Loading...';
 
-    console.log('submit START');
-    console.log(this.getCallback());
-    console.log(callback);
-    console.log(this);
-    console.log('submit END');
+    this.callback(submitData);
 
-    setTimeout(
-      (() => {
-        callback(data);
+    this.#submitButtonElement.innerText = 'Submit';
 
-        this.#submitButtonElement.innerText = 'Submit';
-
-        this.#isSubmitting = false;
-      }).bind(this),
-      1000
-    );
+    this.#isSubmitting = false;
   }
+
+  // this method knows about changes in `this`
+  #addSubmitHandler(element) {
+    this.submitHandler = this.submitHandler.bind(this);
+
+    element.addEventListener('submit', this.submitHandler, false);
+  }
+
+  #removeSubmitHandler(element) {
+    element.removeEventListener('submit', this.submitHandler);
+  }
+
+  #isSubmitting = false;
 
   onSubmit(callback) {
     this.#removeSubmitHandler(this.#formElement);
-    console.log('onSubmit START');
-    console.log(callback);
-    console.log(this.getCallback());
-    this.setCallback(callback);
-    console.log(this.getCallback());
-    console.log(this);
-    console.log('onSubmit END');
+    this.callback = callback;
     // it is now called in the previous (before setting the callback)
     // `this` context so the callback is still `null` there
     this.#addSubmitHandler(this.#formElement);
