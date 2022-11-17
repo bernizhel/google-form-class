@@ -99,7 +99,8 @@ class GoogleForm {
     fieldsetElement.appendChild(this.#submitButtonElement);
 
     this.#formElement.appendChild(fieldsetElement);
-    this.#addSubmitHandler(this.#formElement);
+    this.#addSubmitHandler.call(this, this.#formElement, this.#submit);
+    this.onSubmit(console.table);
   }
 
   #createElement(tag, attributes = {}) {
@@ -359,7 +360,7 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
-  #submitHandler(event) {
+  #submitHandler(callback, event) {
     event.stopPropagation();
     event.preventDefault();
 
@@ -384,27 +385,29 @@ class GoogleForm {
       return;
     }
 
-    this.#submit(submitData, this.#callback);
+    callback(submitData);
   }
 
   #submitHandlerNew = null;
 
-  #addSubmitHandler(element) {
-    this.#submitHandlerNew = this.#submitHandler.bind(this);
+  #addSubmitHandler(element, callback) {
+    this.#submitHandlerNew = this.#submitHandler.bind(this, callback.bind(this, this.#callback)); // here's the thing
+
     element.addEventListener('submit', this.#submitHandlerNew);
   }
 
   #removeSubmitHandler(element) {
     element.removeEventListener('submit', this.#submitHandlerNew);
+
     this.#submitHandlerNew = null;
   }
 
   #isSubmitting = false;
   #callback = () => {
-    console.log('test');
+    console.log('class init');
   };
 
-  #submit(data, cb) {
+  #submit(callback, data) {
     if (this.#isSubmitting) {
       return;
     }
@@ -414,7 +417,7 @@ class GoogleForm {
     this.#submitButtonElement.innerText = 'Loading...';
 
     setTimeout(() => {
-      cb(data);
+      callback(data);
 
       this.#submitButtonElement.innerText = 'Submit';
 
@@ -423,9 +426,9 @@ class GoogleForm {
   }
 
   onSubmit(callback) {
-    this.#removeSubmitHandler(this.#formElement);
+    this.#removeSubmitHandler.call(this, this.#formElement);
     this.#callback = callback;
-    this.#addSubmitHandler(this.#formElement);
+    this.#addSubmitHandler.call(this, this.#formElement, this.#submit);
   }
 
   render(selector) {

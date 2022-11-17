@@ -91,4 +91,7 @@ const sampleForm = new GoogleForm({
 sampleForm.render('.google-form');
 sampleForm.render('.google-form');
 
-sampleForm.onSubmit(console.table);
+sampleForm.onSubmit((data) => {
+  console.log('this is another one');
+  console.table(data);
+});
