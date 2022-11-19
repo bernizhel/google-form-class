@@ -2,6 +2,9 @@ class GoogleForm {
   #options = {};
   #fields = {};
 
+  #callback = () => {};
+  #isSubmitting = false;
+
   #INPUT_KEYWORD = 'input';
   #RADIO_KEYWORD = 'radio';
   #CHECKBOX_KEYWORD = 'checkbox';
@@ -102,6 +105,26 @@ class GoogleForm {
     this.#addSubmitHandler(this.#formElement);
   }
 
+  #addSubmitHandler(element) {
+    element.addEventListener('submit', this.#submitHandler.bind(this));
+  }
+
+  #addKeypressHandler(options, element) {
+    element.addEventListener('keypress', (event) => {
+      event.stopImmediatePropagation();
+
+      if (event.code === 'Enter') {
+        event.preventDefault();
+
+        if ([this.#RADIO_KEYWORD, this.#CHECKBOX_KEYWORD].includes(options.type)) {
+          element.checked = !element.checked;
+        } else {
+          this.#submitButtonElement.focus();
+        }
+      }
+    });
+  }
+
   #createElement(tag, attributes = {}) {
     return Object.assign(document.createElement(tag), attributes);
   }
@@ -124,22 +147,6 @@ class GoogleForm {
     labelElement.appendChild(this.#createElement('br'));
 
     return labelElement;
-  }
-
-  #addKeypressHandler(options, element) {
-    element.addEventListener('keypress', (event) => {
-      event.stopImmediatePropagation();
-
-      if (event.code === 'Enter') {
-        event.preventDefault();
-
-        if ([this.#RADIO_KEYWORD, this.#CHECKBOX_KEYWORD].includes(options.type)) {
-          element.checked = !element.checked;
-        } else {
-          this.#submitButtonElement.focus();
-        }
-      }
-    });
   }
 
   #setField(field) {
@@ -359,9 +366,19 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
-  #callback = null;
-  #isSubmitting = false;
-  #submitHandlerBinded = null;
+  async #submit(data) {
+    if (this.#isSubmitting === true) {
+      return;
+    }
+
+    this.#isSubmitting = true;
+    this.#submitButtonElement.innerText = 'Loading...';
+
+    await this.#callback(data);
+
+    this.#submitButtonElement.innerText = 'Submit';
+    this.#isSubmitting = false;
+  }
 
   #submitHandler(event) {
     event.stopPropagation();
@@ -388,35 +405,11 @@ class GoogleForm {
       return;
     }
 
-    if (this.#isSubmitting) {
-      return;
-    }
-
-    this.#isSubmitting = true;
-
-    this.#submitButtonElement.innerText = 'Loading...';
-
-    this.#callback && this.#callback(submitData);
-
-    this.#submitButtonElement.innerText = 'Submit';
-
-    this.#isSubmitting = false;
-  }
-
-  #addSubmitHandler(element) {
-    this.#submitHandlerBinded = this.#submitHandler.bind(this);
-
-    element.addEventListener('submit', this.#submitHandlerBinded);
-  }
-
-  #removeSubmitHandler(element) {
-    element.removeEventListener('submit', this.#submitHandlerBinded);
+    this.#submit(submitData);
   }
 
   onSubmit(callback) {
-    this.#removeSubmitHandler(this.#formElement);
     this.#callback = callback;
-    this.#addSubmitHandler(this.#formElement);
   }
 
   render(selector) {

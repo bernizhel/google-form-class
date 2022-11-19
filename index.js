@@ -11,10 +11,13 @@ const sampleForm = new GoogleForm({
   ],
 });
 
-sampleForm.onSubmit((data) => {
-  for (const [key, value] of Object.entries(data)) {
-    console.log(`${key}: ${value};`);
-  }
+sampleForm.onSubmit(async (data) => {
+  await new Promise((r) =>
+    setTimeout(() => {
+      console.log(data);
+      r();
+    }, 1000)
+  );
 });
 sampleForm.render('.google-form');
 
