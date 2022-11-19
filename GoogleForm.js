@@ -41,7 +41,6 @@ class GoogleForm {
       );
     }
     this.#setOptions(options);
-    this.callback = () => {};
     this.#initializeForm(options);
   }
 
@@ -100,7 +99,6 @@ class GoogleForm {
     fieldsetElement.appendChild(this.#submitButtonElement);
 
     this.#formElement.appendChild(fieldsetElement);
-    this.submitHandler = this.submitHandler.bind(this);
     this.#addSubmitHandler(this.#formElement);
   }
 
@@ -361,10 +359,11 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
-  // this one is not notified when `this` is changed
-  // HERE IS THE PROBLEM
-  // THIS METHOD SAVES `THIS` AND DOESN'T GET NOTIFIED WHEN `THIS` IS CHANGED
-  submitHandler(event) {
+  #callback = null;
+  #isSubmitting = false;
+  #submitHandlerBinded = null;
+
+  #submitHandler(event) {
     event.stopPropagation();
     event.preventDefault();
 
@@ -389,8 +388,6 @@ class GoogleForm {
       return;
     }
 
-    console.log(this.callback);
-
     if (this.#isSubmitting) {
       return;
     }
@@ -399,35 +396,32 @@ class GoogleForm {
 
     this.#submitButtonElement.innerText = 'Loading...';
 
-    this.callback(submitData);
+    this.#callback && this.#callback(submitData);
 
     this.#submitButtonElement.innerText = 'Submit';
 
     this.#isSubmitting = false;
   }
 
-  // this method knows about changes in `this`
   #addSubmitHandler(element) {
-    this.submitHandler = this.submitHandler.bind(this);
+    this.#submitHandlerBinded = this.#submitHandler.bind(this);
 
-    element.addEventListener('submit', this.submitHandler, false);
+    element.addEventListener('submit', this.#submitHandlerBinded);
   }
 
   #removeSubmitHandler(element) {
-    element.removeEventListener('submit', this.submitHandler);
+    element.removeEventListener('submit', this.#submitHandlerBinded);
   }
-
-  #isSubmitting = false;
 
   onSubmit(callback) {
     this.#removeSubmitHandler(this.#formElement);
-    this.callback = callback;
-    // it is now called in the previous (before setting the callback)
-    // `this` context so the callback is still `null` there
+    this.#callback = callback;
     this.#addSubmitHandler(this.#formElement);
   }
 
   render(selector) {
-    document.querySelector(selector).appendChild(new GoogleForm(this.#options).#formElement);
+    const newForm = new GoogleForm(this.#options);
+    newForm.onSubmit(this.#callback);
+    document.querySelector(selector).appendChild(newForm.#formElement);
   }
 }

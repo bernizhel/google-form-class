@@ -11,7 +11,12 @@ const sampleForm = new GoogleForm({
   ],
 });
 
-sampleForm.render('.google-form');
+sampleForm.onSubmit((data) => {
+  for (const [key, value] of Object.entries(data)) {
+    console.log(`${key}: ${value};`);
+  }
+});
 sampleForm.render('.google-form');
 
 sampleForm.onSubmit(console.table);
+sampleForm.render('.google-form');
