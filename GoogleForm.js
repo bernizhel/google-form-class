@@ -1,6 +1,14 @@
 class GoogleForm {
+  constructor(options) {
+    if (!this.#checkOptions(options)) {
+      throw new TypeError(
+        `The options argument is not valid. Read the documentation on this class.` // TODO constant
+      );
+    }
+    this.#setOptions(options);
+  }
+
   #options = {};
-  #fields = {};
 
   #callback = () => {};
   #isSubmitting = false;
@@ -10,11 +18,7 @@ class GoogleForm {
   #CHECKBOX_KEYWORD = 'checkbox';
   #SELECT_KEYWORD = 'select';
 
-  #formElement = this.#createElement('form', { noValidate: true });
-  #submitButtonElement = this.#createElement('button', {
-    type: 'submit',
-    innerText: 'Submit',
-  });
+  #SUBMIT_KEYWORD = 'submit';
 
   #DEFAULT_INVALID_ERROR = 'Please, input correct data.';
   #DEFAULT_REQUIRED_ERROR = 'Please, enter this field.';
@@ -36,16 +40,6 @@ class GoogleForm {
     [this.#SELECT_KEYWORD]: this.#validateSelectField.bind(this),
     [this.#CHECKBOX_KEYWORD]: this.#validateCheckboxField.bind(this),
   };
-
-  constructor(options) {
-    if (!this.#checkOptions(options)) {
-      throw new TypeError(
-        `The options argument is not valid. Read the documentation on this class.`
-      );
-    }
-    this.#setOptions(options);
-    this.#initializeForm(options);
-  }
 
   #checkOptions(options) {
     if (!options?.title || !(options?.fields && Array.isArray(options.fields))) {
@@ -86,45 +80,6 @@ class GoogleForm {
     this.#options = options;
   }
 
-  #initializeForm(options) {
-    const fieldsetElement = this.#createElement('fieldset');
-    fieldsetElement.appendChild(this.#createElement('legend', { innerText: options.title }));
-
-    if (options.description) {
-      fieldsetElement.appendChild(this.#createElement('p', { innerText: options.description }));
-    }
-
-    for (const fieldOptions of options.fields) {
-      fieldsetElement.appendChild(this.#creationMethods[fieldOptions.type](fieldOptions));
-    }
-
-    fieldsetElement.appendChild(this.#createElement('br'));
-    fieldsetElement.appendChild(this.#submitButtonElement);
-
-    this.#formElement.appendChild(fieldsetElement);
-    this.#addSubmitHandler(this.#formElement);
-  }
-
-  #addSubmitHandler(element) {
-    element.addEventListener('submit', this.#submitHandler.bind(this));
-  }
-
-  #addKeypressHandler(options, element) {
-    element.addEventListener('keypress', (event) => {
-      event.stopImmediatePropagation();
-
-      if (event.code === 'Enter') {
-        event.preventDefault();
-
-        if ([this.#RADIO_KEYWORD, this.#CHECKBOX_KEYWORD].includes(options.type)) {
-          element.checked = !element.checked;
-        } else {
-          this.#submitButtonElement.focus();
-        }
-      }
-    });
-  }
-
   #createElement(tag, attributes = {}) {
     return Object.assign(document.createElement(tag), attributes);
   }
@@ -149,19 +104,19 @@ class GoogleForm {
     return labelElement;
   }
 
-  #setField(field) {
-    this.#fields[field.options.name] = field;
+  #generateCreationData(fieldElement, field) {
+    return { fieldElement, field };
   }
 
   #createInputField(options) {
     const inputElement = this.#createElement('input', options.attributes);
-    this.#addKeypressHandler(options, inputElement);
 
     const errorElement = this.#createElement('span');
 
-    this.#setField({ options, element: inputElement, errorElement });
-
-    return this.#createInputSelectLabelElement(options, inputElement, errorElement);
+    return this.#generateCreationData(
+      this.#createInputSelectLabelElement(options, inputElement, errorElement),
+      { options, element: inputElement, errorElement }
+    );
   }
 
   #createRadioField(options) {
@@ -192,7 +147,6 @@ class GoogleForm {
         name: options.name,
         value,
       });
-      this.#addKeypressHandler(options, radioElement);
 
       radioField.elements.push(radioElement);
 
@@ -204,13 +158,11 @@ class GoogleForm {
       radiosContainerElement.appendChild(this.#createElement('br'));
     }
 
-    this.#setField(radioField);
-
     containerElement.appendChild(radiosContainerElement);
     containerElement.appendChild(errorElement);
     containerElement.appendChild(this.#createElement('br'));
 
-    return containerElement;
+    return this.#generateCreationData(containerElement, radioField);
   }
 
   #createCheckboxField(options) {
@@ -218,9 +170,6 @@ class GoogleForm {
       ...options.attributes,
       type: 'checkbox',
     });
-    this.#addKeypressHandler(options, checkboxElement);
-
-    this.#setField({ options, element: checkboxElement });
 
     const labelElement = this.#createElement('label');
 
@@ -230,7 +179,7 @@ class GoogleForm {
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(this.#createElement('br'));
 
-    return labelElement;
+    return this.#generateCreationData(labelElement, { options, element: checkboxElement });
   }
 
   #createSelectOptions(options) {
@@ -289,9 +238,10 @@ class GoogleForm {
 
     const errorElement = this.#createElement('span');
 
-    this.#setField({ options, element: selectElement, errorElement });
-
-    return this.#createInputSelectLabelElement(options, selectElement, errorElement);
+    return this.#generateCreationData(
+      this.#createInputSelectLabelElement(options, selectElement, errorElement),
+      { options, element: selectElement, errorElement }
+    );
   }
 
   #checkInputValidity(options, element) {
@@ -366,55 +316,121 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
-  async #submit(data) {
-    if (this.#isSubmitting === true) {
+  async #submit(data, submitButtonElement) {
+    if (this.#isSubmitting) {
       return;
     }
 
     this.#isSubmitting = true;
-    this.#submitButtonElement.innerText = 'Loading...';
+    submitButtonElement.removeChild(submitButtonElement.lastChild);
+    submitButtonElement.appendChild(document.createTextNode('Loading...'));
 
     await this.#callback(data);
 
-    this.#submitButtonElement.innerText = 'Submit';
+    submitButtonElement.removeChild(submitButtonElement.lastChild);
+    submitButtonElement.appendChild(document.createTextNode('Submit'));
     this.#isSubmitting = false;
   }
 
-  #submitHandler(event) {
-    event.stopPropagation();
-    event.preventDefault();
+  #addSubmitHandler(formElement, submitButtonElement, fields) {
+    formElement.addEventListener('submit', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
 
-    let elementToFocus = null;
-    let willContinueSubmit = true;
-    const submitData = {};
+      let elementToFocus = null;
+      let willContinueSubmit = true;
+      const submitData = {};
 
-    for (const [name, field] of Object.entries(this.#fields)) {
-      const validationData = this.#validationMethods[field.options.type](field);
+      for (const [name, field] of Object.entries(fields)) {
+        const validationData = this.#validationMethods[field.options.type](field);
 
-      if (!validationData.isValid) {
-        elementToFocus ??= validationData.data;
-        willContinueSubmit = false;
-        continue;
+        if (!validationData.isValid) {
+          elementToFocus ??= validationData.data;
+          willContinueSubmit = false;
+          continue;
+        }
+
+        submitData[name] = validationData.data;
       }
 
-      submitData[name] = validationData.data;
-    }
+      if (!willContinueSubmit) {
+        elementToFocus.focus();
+        return;
+      }
 
-    if (!willContinueSubmit) {
-      elementToFocus.focus();
-      return;
-    }
-
-    this.#submit(submitData);
+      this.#submit(submitData, submitButtonElement);
+    });
   }
 
-  onSubmit(callback) {
-    this.#callback = callback;
+  #addKeypressHandler(formElement, submitButtonElement) {
+    formElement.addEventListener('keypress', (event) => {
+      event.stopImmediatePropagation();
+
+      if (event.code === 'Enter') {
+        event.preventDefault();
+
+        if (
+          [this.#RADIO_KEYWORD, this.#CHECKBOX_KEYWORD].includes(event.target.getAttribute('type'))
+        ) {
+          event.target.checked = !event.target.checked;
+          return;
+        }
+
+        if (event.target.tagName.toLowerCase() === this.#INPUT_KEYWORD) {
+          submitButtonElement.focus();
+          return;
+        }
+
+        if (event.target.getAttribute('type') === this.#SUBMIT_KEYWORD) {
+          formElement.requestSubmit();
+        }
+      }
+    });
+  }
+
+  #createForm() {
+    const fieldsetElement = this.#createElement('fieldset');
+    fieldsetElement.appendChild(this.#createElement('legend', { innerText: this.#options.title }));
+
+    if (this.#options.description) {
+      fieldsetElement.appendChild(
+        this.#createElement('p', { innerText: this.#options.description })
+      );
+    }
+
+    const fields = {};
+
+    for (const fieldOptions of this.#options.fields) {
+      const { fieldElement, field } = this.#creationMethods[fieldOptions.type](fieldOptions);
+
+      fieldsetElement.appendChild(fieldElement);
+      fields[field.options.name] = field;
+    }
+
+    fieldsetElement.appendChild(this.#createElement('br'));
+
+    const submitButtonElement = this.#createElement('button', {
+      type: 'submit',
+      innerText: 'Submit',
+    });
+    fieldsetElement.appendChild(submitButtonElement);
+
+    const formElement = this.#createElement('form', { noValidate: true });
+    formElement.appendChild(fieldsetElement);
+
+    this.#addSubmitHandler(formElement, submitButtonElement, fields);
+    this.#addKeypressHandler(formElement, submitButtonElement);
+
+    return formElement;
   }
 
   render(selector) {
-    const newForm = new GoogleForm(this.#options);
-    newForm.onSubmit(this.#callback);
-    document.querySelector(selector).appendChild(newForm.#formElement);
+    document.querySelector(selector).appendChild(this.#createForm());
+  }
+
+  onSubmit(callback) {
+    this.#callback = callback; // TODO setCallback
   }
 }
+
+// TODO rename commits
