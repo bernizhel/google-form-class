@@ -1,12 +1,12 @@
 class GoogleForm {
   constructor(options) {
     if (!this.#checkOptions(options)) {
-      throw new TypeError(
-        `The options argument is not valid. Read the documentation on this class.` // TODO constant
-      );
+      throw new TypeError(this.#TYPE_ERROR_MESSAGE);
     }
     this.#setOptions(options);
   }
+
+  #TYPE_ERROR_MESSAGE = 'The options argument is not valid. Read the documentation on this class.';
 
   #options = {};
 
@@ -316,12 +316,16 @@ class GoogleForm {
     return this.#generateValidationData(true, element.value);
   }
 
+  #toggleIsSubmitting() {
+    this.#isSubmitting = !this.#isSubmitting;
+  }
+
   async #submit(data, submitButtonElement) {
     if (this.#isSubmitting) {
       return;
     }
 
-    this.#isSubmitting = true;
+    this.#toggleIsSubmitting();
     submitButtonElement.removeChild(submitButtonElement.lastChild);
     submitButtonElement.appendChild(document.createTextNode('Loading...'));
 
@@ -329,7 +333,7 @@ class GoogleForm {
 
     submitButtonElement.removeChild(submitButtonElement.lastChild);
     submitButtonElement.appendChild(document.createTextNode('Submit'));
-    this.#isSubmitting = false;
+    this.#toggleIsSubmitting();
   }
 
   #addSubmitHandler(formElement, submitButtonElement, fields) {
@@ -428,9 +432,11 @@ class GoogleForm {
     document.querySelector(selector).appendChild(this.#createForm());
   }
 
+  #setCallback(callback) {
+    this.#callback = callback;
+  }
+
   onSubmit(callback) {
-    this.#callback = callback; // TODO setCallback
+    this.#setCallback(callback);
   }
 }
-
-// TODO rename commits
