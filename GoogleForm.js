@@ -20,10 +20,12 @@ class GoogleForm {
     select: 'select',
   };
 
-  #SUBMIT_KEYWORD = 'submit';
+  #DEFAULT_ERRORS = {
+    invalid: 'Please, input correct data.',
+    required: 'Please, enter this field.',
+  };
 
-  #DEFAULT_INVALID_ERROR = 'Please, input correct data.';
-  #DEFAULT_REQUIRED_ERROR = 'Please, enter this field.';
+  #SUBMIT_KEYWORD = 'submit';
   #DEFAULT_SELECT_OPTION = 'Not selected';
 
   #BORDER_STYLE_INVALID = '1px solid red';
@@ -73,8 +75,8 @@ class GoogleForm {
 
       fieldOptions.errorMessage ??=
         fieldOptions.type === this.#INPUT_NAME.default
-          ? this.#DEFAULT_INVALID_ERROR
-          : this.#DEFAULT_REQUIRED_ERROR;
+          ? this.#DEFAULT_ERRORS.invalid
+          : this.#DEFAULT_ERRORS.required;
 
       fieldOptions.attributes ??= {};
     }
