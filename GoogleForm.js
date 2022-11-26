@@ -67,16 +67,16 @@ class GoogleForm {
   #setOptions(options) {
     options.description ??= '';
 
-    for (let i = 0; i < options.fields.length; i++) {
-      options.fields[i].isRequired ??= false;
-      options.fields[i].validationFunctions ??= [];
+    for (const fieldOptions of options.fields) {
+      fieldOptions.isRequired ??= false;
+      fieldOptions.validationFunctions ??= [];
 
-      options.fields[i].errorMessage ??=
-        options.fields[i].type === this.#INPUT_NAME.default
+      fieldOptions.errorMessage ??=
+        fieldOptions.type === this.#INPUT_NAME.default
           ? this.#DEFAULT_INVALID_ERROR
           : this.#DEFAULT_REQUIRED_ERROR;
 
-      options.fields[i].attributes ??= {};
+      fieldOptions.attributes ??= {};
     }
 
     this.#options = options;
