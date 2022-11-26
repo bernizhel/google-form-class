@@ -13,10 +13,12 @@ class GoogleForm {
   #callback = () => {};
   #isSubmitting = false;
 
-  #INPUT_KEYWORD = 'input';
-  #RADIO_KEYWORD = 'radio';
-  #CHECKBOX_KEYWORD = 'checkbox';
-  #SELECT_KEYWORD = 'select';
+  #INPUT_NAME = {
+    default: 'input',
+    radio: 'radio',
+    checkbox: 'checkbox',
+    select: 'select',
+  };
 
   #SUBMIT_KEYWORD = 'submit';
 
@@ -28,17 +30,17 @@ class GoogleForm {
   #BORDER_STYLE_VALID = '';
 
   #creationMethods = {
-    [this.#INPUT_KEYWORD]: this.#createInputField.bind(this),
-    [this.#RADIO_KEYWORD]: this.#createRadioField.bind(this),
-    [this.#CHECKBOX_KEYWORD]: this.#createCheckboxField.bind(this),
-    [this.#SELECT_KEYWORD]: this.#createSelectField.bind(this),
+    [this.#INPUT_NAME.default]: this.#createInputField.bind(this),
+    [this.#INPUT_NAME.radio]: this.#createRadioField.bind(this),
+    [this.#INPUT_NAME.checkbox]: this.#createCheckboxField.bind(this),
+    [this.#INPUT_NAME.select]: this.#createSelectField.bind(this),
   };
 
   #validationMethods = {
-    [this.#INPUT_KEYWORD]: this.#validateInputField.bind(this),
-    [this.#RADIO_KEYWORD]: this.#validateRadioField.bind(this),
-    [this.#SELECT_KEYWORD]: this.#validateSelectField.bind(this),
-    [this.#CHECKBOX_KEYWORD]: this.#validateCheckboxField.bind(this),
+    [this.#INPUT_NAME.default]: this.#validateInputField.bind(this),
+    [this.#INPUT_NAME.radio]: this.#validateRadioField.bind(this),
+    [this.#INPUT_NAME.select]: this.#validateSelectField.bind(this),
+    [this.#INPUT_NAME.checkbox]: this.#validateCheckboxField.bind(this),
   };
 
   #checkOptions(options) {
@@ -52,7 +54,7 @@ class GoogleForm {
       }
 
       if (
-        [this.#RADIO_KEYWORD, this.#SELECT_KEYWORD].includes(fieldOptions.type) &&
+        [this.#INPUT_NAME.radio, this.#INPUT_NAME.select].includes(fieldOptions.type) &&
         !fieldOptions?.values
       ) {
         return false;
@@ -70,7 +72,7 @@ class GoogleForm {
       options.fields[i].validationFunctions ??= [];
 
       options.fields[i].errorMessage ??=
-        options.fields[i].type === this.#INPUT_KEYWORD
+        options.fields[i].type === this.#INPUT_NAME.default
           ? this.#DEFAULT_INVALID_ERROR
           : this.#DEFAULT_REQUIRED_ERROR;
 
@@ -374,13 +376,15 @@ class GoogleForm {
         event.preventDefault();
 
         if (
-          [this.#RADIO_KEYWORD, this.#CHECKBOX_KEYWORD].includes(event.target.getAttribute('type'))
+          [this.#INPUT_NAME.radio, this.#INPUT_NAME.checkbox].includes(
+            event.target.getAttribute('type')
+          )
         ) {
           event.target.checked = !event.target.checked;
           return;
         }
 
-        if (event.target.tagName.toLowerCase() === this.#INPUT_KEYWORD) {
+        if (event.target.tagName.toLowerCase() === this.#INPUT_NAME.default) {
           submitButtonElement.focus();
           return;
         }
