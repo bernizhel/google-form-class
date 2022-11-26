@@ -95,7 +95,8 @@ class GoogleForm {
       this.#STYLE_CLASSES[classType] = classNames.join(' ');
     }
 
-    if (options?.defaultSelectOption) {
+    options.defaultSelectOption ??= '';
+    if (options.defaultSelectOption !== '') {
       this.#DEFAULT_SELECT_OPTION = options.defaultSelectOption;
     }
 
@@ -472,7 +473,7 @@ class GoogleForm {
       })
     );
 
-    if (this.#options.description) {
+    if (this.#options.description !== '') {
       fieldsetElement.appendChild(
         this.#createElement('p', {
           classList: this.#STYLE_CLASSES.description,
