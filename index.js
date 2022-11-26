@@ -4,6 +4,7 @@ const sampleForm = new GoogleForm({
   defaultErrors: {
     invalid: 'This field is not valid. Do something about it.',
   },
+  defaultSelectOption: 'View options',
   styleClasses: {
     form: ['form'],
     error: ['error'],

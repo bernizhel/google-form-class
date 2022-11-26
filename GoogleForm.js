@@ -8,10 +8,14 @@ class GoogleForm {
 
   #TYPE_ERROR_MESSAGE = 'The options argument is not valid. Read the documentation on this class.';
 
+  #SUBMIT_KEYWORD = 'submit';
+
   #options = {};
 
   #callback = () => {};
   #isSubmitting = false;
+
+  #DEFAULT_SELECT_OPTION = 'Not selected';
 
   #INPUT_NAME = {
     default: 'input',
@@ -24,9 +28,6 @@ class GoogleForm {
     invalid: 'Please, input correct data.',
     required: 'Please, enter this field.',
   };
-
-  #SUBMIT_KEYWORD = 'submit';
-  #DEFAULT_SELECT_OPTION = 'Not selected';
 
   #STYLE_CLASSES = {
     title: '',
@@ -92,6 +93,10 @@ class GoogleForm {
     options.styleClasses ??= {};
     for (const [classType, classNames] of Object.entries(options.styleClasses)) {
       this.#STYLE_CLASSES[classType] = classNames.join(' ');
+    }
+
+    if (options?.defaultSelectOption) {
+      this.#DEFAULT_SELECT_OPTION = options.defaultSelectOption;
     }
 
     for (const fieldOptions of options.fields) {
