@@ -113,19 +113,17 @@ class GoogleForm {
     return labelElement;
   }
 
-  #generateCreationData(fieldElement, field) {
-    return { fieldElement, field };
-  }
-
   #createInputField(options) {
     const inputElement = this.#createElement('input', options.attributes);
 
     const errorElement = this.#createElement('span');
 
-    return this.#generateCreationData(
-      this.#createInputSelectLabelElement(options, inputElement, errorElement),
-      { options, element: inputElement, errorElement }
-    );
+    const labelElement = this.#createInputSelectLabelElement(options, inputElement, errorElement);
+
+    return {
+      fieldElement: labelElement,
+      field: { options, element: inputElement, errorElement },
+    };
   }
 
   #createRadioField(options) {
@@ -171,7 +169,10 @@ class GoogleForm {
     containerElement.appendChild(errorElement);
     containerElement.appendChild(this.#createElement('br'));
 
-    return this.#generateCreationData(containerElement, radioField);
+    return {
+      fieldElement: containerElement,
+      field: radioField,
+    };
   }
 
   #createCheckboxField(options) {
@@ -188,7 +189,10 @@ class GoogleForm {
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(this.#createElement('br'));
 
-    return this.#generateCreationData(labelElement, { options, element: checkboxElement });
+    return {
+      fieldElement: labelElement,
+      field: { options, element: checkboxElement },
+    };
   }
 
   #createSelectOptions(options) {
@@ -247,10 +251,12 @@ class GoogleForm {
 
     const errorElement = this.#createElement('span');
 
-    return this.#generateCreationData(
-      this.#createInputSelectLabelElement(options, selectElement, errorElement),
-      { options, element: selectElement, errorElement }
-    );
+    const labelElement = this.#createInputSelectLabelElement(options, selectElement, errorElement);
+
+    return {
+      fieldElement: labelElement,
+      field: { options, element: selectElement, errorElement },
+    };
   }
 
   #checkInputValidity(options, element) {
@@ -271,22 +277,18 @@ class GoogleForm {
     return true;
   }
 
-  #generateValidationData(isValid, data) {
-    return { isValid, data };
-  }
-
   #validateInputField({ options, element, errorElement }) {
     if (!this.#checkInputValidity(options, element)) {
       errorElement.textContent = options.errorMessage;
       element.style.border = this.#BORDER_STYLE_INVALID;
 
-      return this.#generateValidationData(false, element);
+      return { isValid: false, element };
     }
 
     errorElement.textContent = '';
     element.style.border = this.#BORDER_STYLE_VALID;
 
-    return this.#generateValidationData(true, element.value);
+    return { isValid: true, value: element.value };
   }
 
   #validateRadioField({ options, elements, errorElement }) {
@@ -296,7 +298,7 @@ class GoogleForm {
         element.style.outline = this.#BORDER_STYLE_INVALID;
       }
 
-      return this.#generateValidationData(false, elements[0]);
+      return { isValid: false, element: elements[0] };
     }
 
     errorElement.textContent = '';
@@ -304,11 +306,11 @@ class GoogleForm {
       element.style.outline = this.#BORDER_STYLE_VALID;
     }
 
-    return this.#generateValidationData(true, elements.find((element) => element.checked).value);
+    return { isValid: true, value: elements.find((element) => element.checked).value };
   }
 
   #validateCheckboxField({ element }) {
-    return this.#generateValidationData(true, element.checked);
+    return { isValid: true, value: element.checked };
   }
 
   #validateSelectField({ options, element, errorElement }) {
@@ -316,13 +318,13 @@ class GoogleForm {
       errorElement.textContent = options.errorMessage;
       element.style.border = this.#BORDER_STYLE_INVALID;
 
-      return this.#generateValidationData(false, element);
+      return { isValid: false, element: element };
     }
 
     errorElement.textContent = '';
     element.style.border = this.#BORDER_STYLE_VALID;
 
-    return this.#generateValidationData(true, element.value);
+    return { isValid: true, value: element.value };
   }
 
   #toggleIsSubmitting() {
@@ -358,12 +360,12 @@ class GoogleForm {
         const validationData = this.#validationMethods[field.options.type](field);
 
         if (!validationData.isValid) {
-          elementToFocus ??= validationData.data;
+          elementToFocus ??= validationData.element;
           willContinueSubmit = false;
           continue;
         }
 
-        submitData[name] = validationData.data;
+        submitData[name] = validationData.value;
       }
 
       if (!willContinueSubmit) {
