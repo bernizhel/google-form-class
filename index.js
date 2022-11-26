@@ -4,6 +4,14 @@ const sampleForm = new GoogleForm({
   defaultErrors: {
     invalid: 'This field is not valid. Do something about it.',
   },
+  styleClasses: {
+    form: ['form'],
+    error: ['error'],
+    fieldErrorDefault: ['field-error-default'],
+    fieldErrorRadio: ['field-error-radio'],
+    fieldTitle: ['field-title'],
+    fieldRadioLabel: ['field-radio-label'],
+  },
   fields: [
     {
       title: 'Name',
@@ -94,6 +102,7 @@ const sampleForm = new GoogleForm({
 sampleForm.render('.google-form');
 
 sampleForm.onSubmit(console.table);
+
 sampleForm.render('.google-form');
 
 sampleForm.onSubmit(async (data) => {

@@ -28,8 +28,23 @@ class GoogleForm {
   #SUBMIT_KEYWORD = 'submit';
   #DEFAULT_SELECT_OPTION = 'Not selected';
 
-  #BORDER_STYLE_INVALID = '1px solid red';
-  #BORDER_STYLE_VALID = '';
+  #STYLE_CLASSES = {
+    title: '',
+    description: '',
+    fieldset: '',
+    form: '',
+    submitButton: '',
+    error: '',
+    fieldErrorDefault: '',
+    fieldErrorRadio: '',
+    fieldTitle: '',
+    fieldDefault: '',
+    fieldRadio: '',
+    fieldRadioContainer: '',
+    fieldRadioLabel: '',
+    fieldCheckbox: '',
+    fieldSelect: '',
+  };
 
   #creationMethods = {
     [this.#INPUT_NAME.default]: this.#createInputField.bind(this),
@@ -74,6 +89,11 @@ class GoogleForm {
       this.#DEFAULT_ERRORS[errorType] = errorMessage;
     }
 
+    options.styleClasses ??= {};
+    for (const [classType, classNames] of Object.entries(options.styleClasses)) {
+      this.#STYLE_CLASSES[classType] = classNames.join(' ');
+    }
+
     for (const fieldOptions of options.fields) {
       fieldOptions.isRequired ??= false;
       fieldOptions.validationFunctions ??= [];
@@ -94,15 +114,20 @@ class GoogleForm {
   }
 
   #createInputSelectLabelElement(options, element, errorElement) {
-    const labelElement = this.#createElement('label', {
+    const titleElement = this.#createElement('span', {
+      classList: this.#STYLE_CLASSES.fieldTitle,
       innerText: options.title,
     });
 
-    labelElement.appendChild(
+    titleElement.appendChild(
       this.#createElement('span', {
         innerText: options.isRequired ? '*' : '',
       })
     );
+
+    const labelElement = this.#createElement('label');
+    labelElement.appendChild(titleElement);
+
     labelElement.appendChild(this.#createElement('br'));
     labelElement.appendChild(element);
 
@@ -114,9 +139,14 @@ class GoogleForm {
   }
 
   #createInputField(options) {
-    const inputElement = this.#createElement('input', options.attributes);
+    const inputElement = this.#createElement('input', {
+      ...options.attributes,
+      classList: this.#STYLE_CLASSES.fieldDefault,
+    });
 
-    const errorElement = this.#createElement('span');
+    const errorElement = this.#createElement('span', {
+      classList: this.#STYLE_CLASSES.error,
+    });
 
     const labelElement = this.#createInputSelectLabelElement(options, inputElement, errorElement);
 
@@ -130,6 +160,7 @@ class GoogleForm {
     const containerElement = this.#createElement('div');
 
     const titleElement = this.#createElement('label', {
+      classList: this.#STYLE_CLASSES.fieldTitle,
       innerText: options.title,
     });
     titleElement.appendChild(
@@ -141,15 +172,20 @@ class GoogleForm {
     containerElement.appendChild(titleElement);
     containerElement.appendChild(this.#createElement('br'));
 
-    const radiosContainerElement = this.#createElement('div');
+    const radiosContainerElement = this.#createElement('div', {
+      classList: this.#STYLE_CLASSES.fieldRadioContainer,
+    });
 
-    const errorElement = this.#createElement('span');
+    const errorElement = this.#createElement('span', {
+      classList: this.#STYLE_CLASSES.error,
+    });
 
     const radioField = { options, elements: [], errorElement };
 
     for (const value of options.values) {
       const radioElement = this.#createElement('input', {
         ...options.attributes,
+        classList: this.#STYLE_CLASSES.fieldRadio,
         type: 'radio',
         name: options.name,
         value,
@@ -157,7 +193,9 @@ class GoogleForm {
 
       radioField.elements.push(radioElement);
 
-      const labelElement = this.#createElement('label');
+      const labelElement = this.#createElement('label', {
+        classList: this.#STYLE_CLASSES.fieldRadioLabel,
+      });
       labelElement.appendChild(radioElement);
       labelElement.appendChild(document.createTextNode(value));
 
@@ -178,10 +216,18 @@ class GoogleForm {
   #createCheckboxField(options) {
     const checkboxElement = this.#createElement('input', {
       ...options.attributes,
+      classList: this.#STYLE_CLASSES.fieldCheckbox,
       type: 'checkbox',
     });
 
-    const labelElement = this.#createElement('label');
+    const titleElement = this.#createElement('span', {
+      classList: this.#STYLE_CLASSES.fieldTitle,
+    });
+
+    const labelElement = this.#createElement('label', {
+      classList: this.#STYLE_CLASSES.fieldTitle,
+    });
+    labelElement.appendChild(titleElement);
 
     labelElement.appendChild(checkboxElement);
     labelElement.appendChild(document.createTextNode(options.title));
@@ -234,7 +280,10 @@ class GoogleForm {
   }
 
   #createSelectField(options) {
-    const selectElement = this.#createElement('select', options.attributes);
+    const selectElement = this.#createElement('select', {
+      ...options.attributes,
+      classList: this.#STYLE_CLASSES.fieldSelect,
+    });
     selectElement.appendChild(
       this.#createElement('option', {
         value: '',
@@ -249,7 +298,9 @@ class GoogleForm {
       selectElement.appendChild(optElement);
     }
 
-    const errorElement = this.#createElement('span');
+    const errorElement = this.#createElement('span', {
+      classList: this.#STYLE_CLASSES.error,
+    });
 
     const labelElement = this.#createInputSelectLabelElement(options, selectElement, errorElement);
 
@@ -280,13 +331,13 @@ class GoogleForm {
   #validateInputField({ options, element, errorElement }) {
     if (!this.#checkInputValidity(options, element)) {
       errorElement.textContent = options.errorMessage;
-      element.style.border = this.#BORDER_STYLE_INVALID;
+      element.classList.add(this.#STYLE_CLASSES.fieldErrorDefault);
 
       return { isValid: false, element };
     }
 
     errorElement.textContent = '';
-    element.style.border = this.#BORDER_STYLE_VALID;
+    element.classList.remove(this.#STYLE_CLASSES.fieldErrorDefault);
 
     return { isValid: true, value: element.value };
   }
@@ -295,7 +346,7 @@ class GoogleForm {
     if (options.isRequired && !elements.find((element) => element.checked)) {
       errorElement.textContent = options.errorMessage;
       for (const element of elements) {
-        element.style.outline = this.#BORDER_STYLE_INVALID;
+        element.classList.add(this.#STYLE_CLASSES.fieldErrorRadio);
       }
 
       return { isValid: false, element: elements[0] };
@@ -303,7 +354,7 @@ class GoogleForm {
 
     errorElement.textContent = '';
     for (const element of elements) {
-      element.style.outline = this.#BORDER_STYLE_VALID;
+      element.classList.remove(this.#STYLE_CLASSES.fieldErrorRadio);
     }
 
     return { isValid: true, value: elements.find((element) => element.checked).value };
@@ -316,13 +367,13 @@ class GoogleForm {
   #validateSelectField({ options, element, errorElement }) {
     if (options.isRequired && element.value === '') {
       errorElement.textContent = options.errorMessage;
-      element.style.border = this.#BORDER_STYLE_INVALID;
+      element.classList.add(this.#STYLE_CLASSES.fieldErrorDefault);
 
       return { isValid: false, element: element };
     }
 
     errorElement.textContent = '';
-    element.style.border = this.#BORDER_STYLE_VALID;
+    element.classList.remove(this.#STYLE_CLASSES.fieldErrorDefault);
 
     return { isValid: true, value: element.value };
   }
@@ -406,12 +457,22 @@ class GoogleForm {
   }
 
   #createForm() {
-    const fieldsetElement = this.#createElement('fieldset');
-    fieldsetElement.appendChild(this.#createElement('legend', { innerText: this.#options.title }));
+    const fieldsetElement = this.#createElement('fieldset', {
+      classList: this.#STYLE_CLASSES.fieldset,
+    });
+    fieldsetElement.appendChild(
+      this.#createElement('legend', {
+        classList: this.#STYLE_CLASSES.title,
+        innerText: this.#options.title,
+      })
+    );
 
     if (this.#options.description) {
       fieldsetElement.appendChild(
-        this.#createElement('p', { innerText: this.#options.description })
+        this.#createElement('p', {
+          classList: this.#STYLE_CLASSES.description,
+          innerText: this.#options.description,
+        })
       );
     }
 
@@ -427,12 +488,16 @@ class GoogleForm {
     fieldsetElement.appendChild(this.#createElement('br'));
 
     const submitButtonElement = this.#createElement('button', {
+      classList: this.#STYLE_CLASSES.submitButton,
       type: 'submit',
       innerText: 'Submit',
     });
     fieldsetElement.appendChild(submitButtonElement);
 
-    const formElement = this.#createElement('form', { noValidate: true });
+    const formElement = this.#createElement('form', {
+      classList: this.#STYLE_CLASSES.form,
+      noValidate: true,
+    });
     formElement.appendChild(fieldsetElement);
 
     this.#addSubmitHandler(formElement, submitButtonElement, fields);

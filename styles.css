@@ -1,0 +1,38 @@
+:root {
+  --error-color: rgb(173, 16, 47);
+}
+
+.field-error-default {
+  outline: 1px solid var(--error-color);
+  border-radius: 1px;
+}
+
+.field-error-radio:after {
+  content: '';
+  display: block;
+  height: 13px;
+  box-shadow: 0 0 0 1px var(--error-color);
+  border-radius: 50%;
+}
+
+.form {
+  background-color: #ddd;
+  color: #444;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 1.125rem;
+}
+
+.field-title {
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.field-radio-label {
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.error {
+  color: var(--error-color);
+  font-size: 0.875rem;
+}
