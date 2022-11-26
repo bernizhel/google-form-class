@@ -1,6 +1,9 @@
 const sampleForm = new GoogleForm({
   title: 'Your info',
   description: 'Please enter your info',
+  defaultErrors: {
+    invalid: 'This field is not valid. Do something about it.',
+  },
   fields: [
     {
       title: 'Name',

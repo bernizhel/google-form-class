@@ -69,6 +69,11 @@ class GoogleForm {
   #setOptions(options) {
     options.description ??= '';
 
+    options.defaultErrors ??= {};
+    for (const [errorType, errorMessage] of Object.entries(options.defaultErrors)) {
+      this.#DEFAULT_ERRORS[errorType] = errorMessage;
+    }
+
     for (const fieldOptions of options.fields) {
       fieldOptions.isRequired ??= false;
       fieldOptions.validationFunctions ??= [];
